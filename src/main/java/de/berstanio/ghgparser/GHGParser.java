@@ -7,6 +7,11 @@ import java.util.stream.Collectors;
 public class GHGParser {
 
     public static void main(String[] args) {
+        try {
+            Class.forName("de.berstanio.ghgparser.Logger");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
 
