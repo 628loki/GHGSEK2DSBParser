@@ -1,8 +1,10 @@
 package de.berstanio.ghgparser;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.StringJoiner;
 
-public class CoreCourse {
+public class CoreCourse implements Serializable {
 
     private String courseName;
     private String teacher;

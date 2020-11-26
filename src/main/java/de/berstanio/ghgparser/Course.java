@@ -1,8 +1,9 @@
 package de.berstanio.ghgparser;
 
+import java.io.Serializable;
 import java.time.DayOfWeek;
 
-public class Course {
+public class Course implements Serializable {
 
     private String courseName;
     private String teacher;
