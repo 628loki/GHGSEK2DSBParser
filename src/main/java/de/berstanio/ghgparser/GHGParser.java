@@ -18,9 +18,8 @@ public class GHGParser {
         }
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
-        ArrayList<CoreCourse> coreCoursesLoaded = loadSelectedCoreCourses();
-        User user;
-        if (loadSelectedCoreCourses() == null) {
+        ArrayList<User> users = User.loadUsers();
+        if (users.isEmpty()) {
 
             //Plan planThis = new Plan(week);
             //Plan planNext = new Plan(week + 1);
@@ -36,7 +35,6 @@ public class GHGParser {
                     if (blockedNames.contains(coreCourse.getCourses().get(0).getCourseName().substring(2, 4).toLowerCase()))
                         return false;
                 }
-
                 System.out.println(coreCourse.getCourses().get(0));
                 String string = scanner.next();
                 if (string.equalsIgnoreCase("j")) {
@@ -51,46 +49,13 @@ public class GHGParser {
                     return false;
                 }
             }).collect(Collectors.toList());
-            user = new User(coreCourses);
-        }else {
-            user = new User(coreCoursesLoaded);
+            users.add(new User(coreCourses));
         }
-        HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(new Plan(week).getDayListMap());
-        masked.forEach((dayOfWeek, courses) -> {
-            courses.forEach(course -> {
-                System.out.println(course.toString());
-            });
+        users.forEach(user -> {
+            HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(new Plan(week).getDayListMap());
+            masked.forEach((dayOfWeek, courses) -> courses.forEach(System.out::println));
         });
-        saveSelectedCoreCourses(user.getCoreCourses());
-    }
-
-    public static ArrayList<CoreCourse> loadSelectedCoreCourses(){
-        if (Files.exists(Paths.get("save.yml"))){
-            try {
-                List<String> strings =  Files.readAllLines(Paths.get("save.yml"), StandardCharsets.ISO_8859_1);
-                String join = String.join("", strings);
-                byte[] data = Base64.getDecoder().decode(join);
-                ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(data));
-                ArrayList<CoreCourse> courses = (ArrayList<CoreCourse>) objectInputStream.readObject();
-                return courses;
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    public static void saveSelectedCoreCourses(ArrayList<CoreCourse> courses){
-        try {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-            objectOutputStream.writeObject(courses);
-            objectOutputStream.close();
-            byte[] save = Base64.getEncoder().encode(byteArrayOutputStream.toByteArray());
-            Files.write(Paths.get("save.yml"), save);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        users.forEach(User::saveUser);
     }
 
 }

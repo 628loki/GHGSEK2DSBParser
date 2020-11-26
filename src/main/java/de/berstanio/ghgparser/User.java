@@ -1,12 +1,16 @@
 package de.berstanio.ghgparser;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-public class User {
+public class User implements Serializable{
 
     private ArrayList<CoreCourse> coreCourses = new ArrayList<>();
 
@@ -84,6 +88,34 @@ public class User {
         });
         return newMap;
     }
+
+    public static ArrayList<User> loadUsers(){
+        File dir = new File("user/");
+        ArrayList<User> users = new ArrayList<>();
+        Arrays.stream(dir.listFiles()).filter(File::isFile).forEach(file1 -> {
+            try {
+                ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file1));
+                User user = (User) objectInputStream.readObject();
+                objectInputStream.close();
+                users.add(user);
+                file1.delete();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        });
+        return users;
+    }
+
+    public void saveUser(){
+        try {
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("user/" + hashCode() + ".yml"));
+            objectOutputStream.writeObject(this);
+            objectOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public ArrayList<CoreCourse> getCoreCourses() {
         return coreCourses;
