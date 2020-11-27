@@ -27,7 +27,8 @@ public class JahresStundenPlan extends Plan {
     public ArrayList<CoreCourse> loadCoreCourses(){
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = getDayListMap();
 
-        dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
+        // TODO: 27.11.2020 Testen ob das noch geht
+        /*dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
             if (course.getRoom().isEmpty() && course.getTeacher().equalsIgnoreCase("PADD")){
                 course.setRoom(course.getCourseName());
                 course.setCourseName(course.getTeacher());
@@ -37,7 +38,7 @@ public class JahresStundenPlan extends Plan {
         });
         dayListMap.get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
         dayListMap.get(DayOfWeek.MONDAY).get(6).getCourses().addAll(dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().stream().filter(course -> course.getCourseName().equalsIgnoreCase("PADD")).collect(Collectors.toList()));
-
+*/
 
         ArrayList<Course> alreadySwapped = new ArrayList<>();
         dayListMap.forEach((dayOfWeek, blocks) -> {
@@ -53,7 +54,7 @@ public class JahresStundenPlan extends Plan {
                 });
             });
         });
-        normalize(dayListMap);
+        normalize();
 
         /*dayListMap.forEach((dayOfWeek, blocks) -> {
             System.out.println("Tag: " + dayOfWeek.name());

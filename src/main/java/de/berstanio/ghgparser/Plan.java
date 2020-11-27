@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 public class Plan {
 
@@ -165,9 +166,9 @@ public class Plan {
         return dayListMap;
     }
 
-    public void normalize(HashMap<DayOfWeek, LinkedList<Block>> dayListMap){
+    public void normalize(){
         //Alle leeren Stunden entfernen und doppel STunden entfernen(unterschiedliche Lehrer/gleicher Raum)
-        dayListMap.forEach((dayOfWeek, blocks) -> {
+        getDayListMap().forEach((dayOfWeek, blocks) -> {
             blocks.removeIf(block -> {
                 ArrayList<Course> alreadyRemoved = new ArrayList<>();
                 block.getCourses().removeIf(course -> {
@@ -192,6 +193,24 @@ public class Plan {
                 return block.getCourses().isEmpty();
             });
         });
+// TODO: 27.11.2020 Hier richtig einfügen.
+        //Normal: PADD = courseName; teacher = SHKE
+        //JahresStunden: CourseName = SHKE; teacher = PADD
+        //NAch Swap: CourseName = SHKE; Room = PADD
+        getDayListMap().get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
+
+            if ((course.getTeacher().isEmpty() && course.getRoom().equalsIgnoreCase("PADD"))){
+                course.setTeacher(course.getCourseName());
+                course.setCourseName(course.getRoom());
+                course.setRoom("EXT");
+            }
+
+            if ((course.getRoom().isEmpty() && course.getCourseName().equalsIgnoreCase("PADD"))){
+                course.setLength(2);
+            }
+        });
+        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
+        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().addAll(dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().stream().filter(course -> course.getCourseName().equalsIgnoreCase("PADD")).collect(Collectors.toList()));
     }
 
     public String download(){

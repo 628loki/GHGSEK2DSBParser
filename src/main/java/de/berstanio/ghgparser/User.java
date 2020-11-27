@@ -78,6 +78,7 @@ public class User implements Serializable{
                 Optional<Course> optionalCourse = block.getCourses().stream().filter(tmp ->
                         tmp.getTeacher().equalsIgnoreCase(course.getTeacher())
                         && tmp.getCourseName().equalsIgnoreCase(course.getCourseName())).findFirst();
+
                 if (optionalCourse.isPresent()){
                     newMap.get(course.getDay()).set(course.getLesson() - 1, optionalCourse.get());
                 }else {
@@ -92,6 +93,7 @@ public class User implements Serializable{
     public static ArrayList<User> loadUsers(){
         File dir = new File("user/");
         ArrayList<User> users = new ArrayList<>();
+        if (dir.listFiles().length == 0) return users;
         Arrays.stream(dir.listFiles()).filter(File::isFile).forEach(file1 -> {
             try {
                 ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file1));

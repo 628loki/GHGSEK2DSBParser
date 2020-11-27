@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class GHGParser {
@@ -51,11 +52,34 @@ public class GHGParser {
             }).collect(Collectors.toList());
             users.add(new User(coreCourses));
         }
-        users.forEach(user -> {
+        /*users.forEach(user -> {
             HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(new Plan(week).getDayListMap());
             masked.forEach((dayOfWeek, courses) -> courses.forEach(System.out::println));
-        });
+        });*/
         users.forEach(User::saveUser);
+
+        try {
+            // TODO: 27.11.2020 Schwimmen falsch erkannt
+            User user = users.get(0);
+            List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
+            String rawHtml = String.join("", rawHtmlList);
+            AtomicReference<String> rawHtmlReference = new AtomicReference<>();
+            rawHtmlReference.set(rawHtml);
+            Plan plan = new Plan(week);
+            plan.normalize();
+            HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
+            masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
+                for (int i = 0; i < course.getLength(); i++) {
+                    rawHtmlReference.set(rawHtmlReference.get()
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", course.getRoom())
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", course.getCourseName())
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", course.getTeacher()));
+                }
+            }));
+            Files.write(Paths.get("out.htm"), rawHtmlReference.get().getBytes(StandardCharsets.ISO_8859_1));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }
