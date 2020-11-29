@@ -11,6 +11,76 @@ import java.util.stream.Collectors;
 
 public class GHGParser {
 
+    private static ArrayList<User> users;
+    private static String rawHtml;
+    private static JahresStundenPlan jahresStundenPlan;
+
+    public static void init(InputStream rawHtmlStream) throws IOException {
+        try {
+            Class.forName("de.berstanio.ghgparser.Logger");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        ArrayList<User> users = User.loadUsers();
+        setUsers(users);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream));
+        String line;
+        StringBuilder rawHtmlBuilder = new StringBuilder();
+        while ((line = bufferedReader.readLine()) != null){
+            rawHtmlBuilder.append(line);
+        }
+        setRawHtml(rawHtmlBuilder.toString());
+        Calendar calendar = Calendar.getInstance();
+        int week = calendar.get(Calendar.WEEK_OF_YEAR);
+
+        setJahresStundenPlan(new JahresStundenPlan(week));
+    }
+
+    public static ArrayList<CoreCourse> remainingCoreCourses(ArrayList<CoreCourse> choosen, ArrayList<CoreCourse> remaining){
+        ArrayList<String> blockedCourses = new ArrayList<>();
+        ArrayList<String> blockedNames = new ArrayList<>();
+
+        choosen.forEach(coreCourse -> {
+            for (Course course : coreCourse.getCourses()) {
+                blockedCourses.add(course.getDay().name() + course.getLesson());
+            }
+            if (coreCourse.getCourseName().length() > 4) {
+                blockedNames.add(coreCourse.getCourseName().substring(2, 4).toLowerCase());
+            }
+        });
+
+        return (ArrayList<CoreCourse>) remaining.stream().filter(coreCourse -> {
+            if (blockedCourses.contains(coreCourse.getCourses().get(0).getDay().name() + coreCourse.getCourses().get(0).getLesson()))
+                return false;
+            if (coreCourse.getCourses().get(0).getCourseName().length() > 3) {
+                return !blockedNames.contains(coreCourse.getCourseName().substring(2, 4).toLowerCase());
+            }
+            return true;
+        }).collect(Collectors.toList());
+    }
+
+    public static String generateHtmlFile(User user, int week){
+        AtomicReference<String> rawHtmlReference = new AtomicReference<>();
+        rawHtmlReference.set(rawHtml);
+        Plan plan = new Plan(week);
+        plan.normalize();
+        HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
+        masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
+            for (int i = 0; i < course.getLength(); i++) {
+                rawHtmlReference.set(rawHtmlReference.get()
+                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", course.getRoom())
+                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", course.getCourseName())
+                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", course.getTeacher()));
+            }
+        }));
+
+        return rawHtmlReference.get();
+    }
+
+    public static void close(){
+        getUsers().forEach(User::saveUser);
+    }
+
     public static void main(String[] args) {
         try {
             Class.forName("de.berstanio.ghgparser.Logger");
@@ -20,6 +90,8 @@ public class GHGParser {
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
         ArrayList<User> users = User.loadUsers();
+        JahresStundenPlan jahresStundenPlan2 = new JahresStundenPlan(week);
+        jahresStundenPlan2.getCoreCourses().forEach(coreCourse -> System.out.println(coreCourse.getCourseName() + "  " + coreCourse.getTeacher()));
         if (users.isEmpty()) {
 
             //Plan planThis = new Plan(week);
@@ -27,30 +99,20 @@ public class GHGParser {
             JahresStundenPlan jahresStundenPlan = new JahresStundenPlan(week);
             System.out.println(jahresStundenPlan.getToken());
             Scanner scanner = new Scanner(System.in);
-            ArrayList<String> blockedCourses = new ArrayList<>();
-            ArrayList<String> blockedNames = new ArrayList<>();
-            ArrayList<CoreCourse> coreCourses = (ArrayList<CoreCourse>) jahresStundenPlan.getCoreCourses().stream().filter(coreCourse -> {
-                if (blockedCourses.contains(coreCourse.getCourses().get(0).getDay().name() + coreCourse.getCourses().get(0).getLesson()))
-                    return false;
-                if (coreCourse.getCourses().get(0).getCourseName().length() > 4) {
-                    if (blockedNames.contains(coreCourse.getCourses().get(0).getCourseName().substring(2, 4).toLowerCase()))
-                        return false;
-                }
-                System.out.println(coreCourse.getCourses().get(0));
+            ArrayList<CoreCourse> coursesTmp = jahresStundenPlan.getCoreCourses();
+            ArrayList<CoreCourse> choosen = new ArrayList<>();
+            while (coursesTmp.size() != 0){
+                System.out.println(coursesTmp.get(0).getCourses().get(0).toString());
                 String string = scanner.next();
-                if (string.equalsIgnoreCase("j")) {
-                    for (Course course : coreCourse.getCourses()) {
-                        blockedCourses.add(course.getDay().name() + course.getLesson());
-                    }
-                    if (coreCourse.getCourses().get(0).getCourseName().length() > 4) {
-                        blockedNames.add(coreCourse.getCourses().get(0).getCourseName().substring(2, 4).toLowerCase());
-                    }
-                    return true;
-                } else {
-                    return false;
+                if (string.equalsIgnoreCase("j")){
+                    choosen.add(coursesTmp.get(0));
+                    coursesTmp = remainingCoreCourses(choosen, coursesTmp);
+                }else {
+                    coursesTmp.remove(0);
+                    coursesTmp.trimToSize();
                 }
-            }).collect(Collectors.toList());
-            users.add(new User(coreCourses));
+            }
+            users.add(new User(choosen));
         }
         /*users.forEach(user -> {
             HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(new Plan(week).getDayListMap());
@@ -82,4 +144,27 @@ public class GHGParser {
         }
     }
 
+    public static ArrayList<User> getUsers() {
+        return users;
+    }
+
+    public static void setUsers(ArrayList<User> users) {
+        GHGParser.users = users;
+    }
+
+    public static String getRawHtml() {
+        return rawHtml;
+    }
+
+    public static void setRawHtml(String rawHtml) {
+        GHGParser.rawHtml = rawHtml;
+    }
+
+    public static JahresStundenPlan getJahresStundenPlan() {
+        return jahresStundenPlan;
+    }
+
+    public static void setJahresStundenPlan(JahresStundenPlan jahresStundenPlan) {
+        GHGParser.jahresStundenPlan = jahresStundenPlan;
+    }
 }
