@@ -17,10 +17,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.time.DayOfWeek;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Plan {
@@ -36,7 +33,7 @@ public class Plan {
 
     public void refresh(){
         String s = download();
-        String newHash = DigestUtils.md5Hex(s);
+        String newHash = Base64.getEncoder().encodeToString(DigestUtils.md5(s));
         if (!newHash.equals(getHash())){
             setHash(newHash);
             setDayListMap(parse(s));
