@@ -21,26 +21,13 @@ public class JahresStundenPlan extends Plan {
 
     private ArrayList<CoreCourse> coreCourses;
 
-    public JahresStundenPlan(int week) {
-        super(week);
+    public JahresStundenPlan() {
+        super(0);
         setCoreCourses(loadCoreCourses());
     }
 
     public ArrayList<CoreCourse> loadCoreCourses(){
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = getDayListMap();
-
-        // TODO: 27.11.2020 Testen ob das noch geht
-        /*dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
-            if (course.getRoom().isEmpty() && course.getTeacher().equalsIgnoreCase("PADD")){
-                course.setRoom(course.getCourseName());
-                course.setCourseName(course.getTeacher());
-                course.setTeacher("EXT");
-                course.setLength(2);
-            }
-        });
-        dayListMap.get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
-        dayListMap.get(DayOfWeek.MONDAY).get(6).getCourses().addAll(dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().stream().filter(course -> course.getCourseName().equalsIgnoreCase("PADD")).collect(Collectors.toList()));
-*/
 
         ArrayList<Course> alreadySwapped = new ArrayList<>();
         dayListMap.forEach((dayOfWeek, blocks) -> {
@@ -57,15 +44,6 @@ public class JahresStundenPlan extends Plan {
             });
         });
         normalize();
-
-        /*dayListMap.forEach((dayOfWeek, blocks) -> {
-            System.out.println("Tag: " + dayOfWeek.name());
-            for (int i = 0; i < blocks.size(); i++) {
-                Block block = blocks.get(i);
-                System.out.println("Stunde: " + (i + 1));
-                block.getCourses().forEach(System.out::println);
-            }
-        });*/
 
         ArrayList<Course> alreadyAdd = new ArrayList<>();
 
@@ -160,12 +138,6 @@ public class JahresStundenPlan extends Plan {
                 }
             }
         }
-        /*finished.forEach(coreCourse -> {
-            System.out.println("Der Kurs: " + coreCourse.getCourseName() + " mit dem Lehrer " + coreCourse.getTeacher() + " findet statt: ");
-            coreCourse.getCourses().forEach(course -> {
-                System.out.println("Tag: " + course.getDay().name() + " Stunde: " + course.getLesson());
-            });
-        });*/
         return finished;
     }
 
@@ -192,6 +164,28 @@ public class JahresStundenPlan extends Plan {
         }catch (IOException e){
             e.printStackTrace();
             return "";
+        }
+    }
+
+    public int getWeek(){
+        try {
+            URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/data.js");
+            HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
+
+            urlConnection.connect();
+
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
+            char c;
+            StringBuilder stringBuilder = new StringBuilder();
+            while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
+                stringBuilder.append(c);
+            }
+            stringBuilder.delete(0, stringBuilder.indexOf("weeks: ") + 15);
+            stringBuilder.delete(2, stringBuilder.length());
+            return Integer.parseInt(stringBuilder.toString());
+        }catch (IOException e){
+            e.printStackTrace();
+            return 0;
         }
     }
 

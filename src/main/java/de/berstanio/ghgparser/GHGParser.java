@@ -30,7 +30,7 @@ public class GHGParser {
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
 
-        setJahresStundenPlan(new JahresStundenPlan(week));
+        setJahresStundenPlan(new JahresStundenPlan());
     }
 
     public static ArrayList<CoreCourse> remainingCoreCourses(ArrayList<CoreCourse> choosen, ArrayList<CoreCourse> remaining){
@@ -84,16 +84,17 @@ public class GHGParser {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
+        setBasedir(new File("user/"));
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
         ArrayList<User> users = User.loadUsers();
-        JahresStundenPlan jahresStundenPlan2 = new JahresStundenPlan(week);
+        JahresStundenPlan jahresStundenPlan2 = new JahresStundenPlan();
         jahresStundenPlan2.getCoreCourses().forEach(coreCourse -> System.out.println(coreCourse.getCourseName() + "  " + coreCourse.getTeacher()));
         if (users.isEmpty()) {
 
             //Plan planThis = new Plan(week);
             //Plan planNext = new Plan(week + 1);
-            JahresStundenPlan jahresStundenPlan = new JahresStundenPlan(week);
+            JahresStundenPlan jahresStundenPlan = new JahresStundenPlan();
             System.out.println(jahresStundenPlan.getToken());
             Scanner scanner = new Scanner(System.in);
             ArrayList<CoreCourse> coursesTmp = jahresStundenPlan.getCoreCourses();
