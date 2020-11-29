@@ -167,6 +167,24 @@ public class Plan {
     }
 
     public void normalize(){
+// TODO: 27.11.2020 Hier richtig einfügen.
+        //Normal: PADD = courseName; teacher = SHKE
+        //JahresStunden: CourseName = SHKE; teacher = PADD
+        //NAch Swap: CourseName = SHKE; Room = PADD
+        getDayListMap().get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
+
+            if ((course.getTeacher().isEmpty() && course.getRoom().equalsIgnoreCase("PADD"))){
+                course.setTeacher(course.getCourseName());
+                course.setCourseName(course.getRoom());
+                course.setRoom("EXT");
+            }
+
+            if ((course.getRoom().isEmpty() && course.getCourseName().equalsIgnoreCase("PADD"))){
+                course.setLength(2);
+            }
+        });
+        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
+        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().addAll(dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().stream().filter(course -> course.getCourseName().equalsIgnoreCase("PADD")).collect(Collectors.toList()));
         //Alle leeren Stunden entfernen und doppel STunden entfernen(unterschiedliche Lehrer/gleicher Raum)
         getDayListMap().forEach((dayOfWeek, blocks) -> {
             blocks.removeIf(block -> {
@@ -193,24 +211,6 @@ public class Plan {
                 return block.getCourses().isEmpty();
             });
         });
-// TODO: 27.11.2020 Hier richtig einfügen.
-        //Normal: PADD = courseName; teacher = SHKE
-        //JahresStunden: CourseName = SHKE; teacher = PADD
-        //NAch Swap: CourseName = SHKE; Room = PADD
-        getDayListMap().get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
-
-            if ((course.getTeacher().isEmpty() && course.getRoom().equalsIgnoreCase("PADD"))){
-                course.setTeacher(course.getCourseName());
-                course.setCourseName(course.getRoom());
-                course.setRoom("EXT");
-            }
-
-            if ((course.getRoom().isEmpty() && course.getCourseName().equalsIgnoreCase("PADD"))){
-                course.setLength(2);
-            }
-        });
-        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
-        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().addAll(dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().stream().filter(course -> course.getCourseName().equalsIgnoreCase("PADD")).collect(Collectors.toList()));
     }
 
     public String download(){
