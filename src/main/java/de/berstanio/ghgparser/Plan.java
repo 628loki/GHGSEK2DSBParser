@@ -1,10 +1,12 @@
 package de.berstanio.ghgparser;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.json.simple.JSONArray;
+import org.json.JSONArray;
+import org.json.JSONObject;
+/*import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.simple.parser.ParseException;*/
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -248,11 +250,11 @@ public class Plan {
             while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
                 stringBuilder.append(c);
             }
-            JSONParser jsonParser = new JSONParser();
-            JSONArray array = (JSONArray) jsonParser.parse(stringBuilder.toString());
+            //JSONParser jsonParser = new JSONParser();
+            JSONArray array = (JSONArray) new JSONArray(stringBuilder.toString());
             JSONObject object = (JSONObject) array.get(0);
             return (String) object.get("Id");
-        }catch (IOException | ParseException e){
+        }catch (IOException e){
             e.printStackTrace();
             return "";
         }
