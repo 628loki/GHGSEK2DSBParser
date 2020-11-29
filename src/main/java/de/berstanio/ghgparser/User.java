@@ -91,7 +91,7 @@ public class User implements Serializable{
     }
 
     public static ArrayList<User> loadUsers(){
-        File dir = new File("user/");
+        File dir = GHGParser.getBasedir();
         ArrayList<User> users = new ArrayList<>();
         if (dir.listFiles().length == 0) return users;
         Arrays.stream(dir.listFiles()).filter(File::isFile).forEach(file1 -> {
@@ -110,7 +110,8 @@ public class User implements Serializable{
 
     public void saveUser(){
         try {
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream("user/" + hashCode() + ".yml"));
+            File dir = GHGParser.getBasedir();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(dir.getAbsolutePath() + hashCode() + ".yml"));
             objectOutputStream.writeObject(this);
             objectOutputStream.close();
         } catch (IOException e) {
