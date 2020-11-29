@@ -17,11 +17,7 @@ public class GHGParser {
     private static File basedir;
 
     public static void init(InputStream rawHtmlStream, File basedir) throws IOException {
-        try {
-            Class.forName("de.berstanio.ghgparser.Logger");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        setBasedir(basedir);
         ArrayList<User> users = User.loadUsers();
         setUsers(users);
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream));
@@ -35,7 +31,6 @@ public class GHGParser {
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
 
         setJahresStundenPlan(new JahresStundenPlan(week));
-        setBasedir(basedir);
     }
 
     public static ArrayList<CoreCourse> remainingCoreCourses(ArrayList<CoreCourse> choosen, ArrayList<CoreCourse> remaining){

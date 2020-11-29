@@ -93,18 +93,20 @@ public class User implements Serializable{
     public static ArrayList<User> loadUsers(){
         File dir = GHGParser.getBasedir();
         ArrayList<User> users = new ArrayList<>();
-        if (dir.listFiles().length == 0) return users;
-        Arrays.stream(dir.listFiles()).filter(File::isFile).forEach(file1 -> {
-            try {
-                ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file1));
-                User user = (User) objectInputStream.readObject();
-                objectInputStream.close();
-                users.add(user);
-                file1.delete();
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-        });
+        if (dir.listFiles() != null) {
+            if (dir.listFiles().length == 0) return users;
+            Arrays.stream(dir.listFiles()).filter(File::isFile).forEach(file1 -> {
+                try {
+                    ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file1));
+                    User user = (User) objectInputStream.readObject();
+                    objectInputStream.close();
+                    users.add(user);
+                    file1.delete();
+                } catch (IOException | ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
         return users;
     }
 
