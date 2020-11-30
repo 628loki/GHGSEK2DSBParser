@@ -64,12 +64,26 @@ public class GHGParser {
         Plan plan = new Plan(week);
         plan.normalize();
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
+        String strikes = "<strike>con</strike>";
         masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
             for (int i = 0; i < course.getLength(); i++) {
+                String room = course.getRoom();
+                String name = course.getCourseName();
+                String teacher = course.getTeacher();
+                if (course.isCancelled()){
+                    room = strikes.replace("con", room);
+                    name = strikes.replace("con", name);
+                    teacher = strikes.replace("con", teacher);
+                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp ->
+                        comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                        && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                        && comp.getRoom().equalsIgnoreCase(course.getRoom()))){
+                    room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+                }
                 rawHtmlReference.set(rawHtmlReference.get()
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", course.getRoom())
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", course.getCourseName())
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", course.getTeacher()));
+                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
+                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
+                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher));
             }
         }));
 
