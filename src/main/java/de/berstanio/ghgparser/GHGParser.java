@@ -46,14 +46,16 @@ public class GHGParser {
             }
         });
 
-        return (ArrayList<CoreCourse>) remaining.stream().filter(coreCourse -> {
+        remaining.removeIf(coreCourse -> {
             if (blockedCourses.contains(coreCourse.getCourses().get(0).getDay().name() + coreCourse.getCourses().get(0).getLesson()))
-                return false;
+                return true;
             if (coreCourse.getCourses().get(0).getCourseName().length() > 3) {
-                return !blockedNames.contains(coreCourse.getCourseName().substring(2, 4).toLowerCase());
+                return blockedNames.contains(coreCourse.getCourseName().substring(2, 4).toLowerCase());
             }
-            return true;
-        }).collect(Collectors.toList());
+            return false;
+        });
+        return remaining;
+
     }
 
     public static String generateHtmlFile(User user, int week){
