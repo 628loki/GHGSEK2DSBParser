@@ -5,6 +5,7 @@ import java.time.DayOfWeek;
 
 public class Course implements Serializable {
 
+    private static final long serialVersionUID = 6838224638086699525L;
     private String courseName;
     private String teacher;
     private String room;
@@ -15,16 +16,14 @@ public class Course implements Serializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Course{");
-        sb.append("courseName='").append(courseName).append('\'');
-        sb.append(", teacher='").append(teacher).append('\'');
-        sb.append(", room='").append(room).append('\'');
-        sb.append(", length=").append(length);
-        sb.append(", day=").append(day);
-        sb.append(", lesson=").append(lesson);
-        sb.append(", cancelled=").append(cancelled);
-        sb.append('}');
-        return sb.toString();
+        return "Course{" + "courseName='" + courseName + '\'' +
+                ", teacher='" + teacher + '\'' +
+                ", room='" + room + '\'' +
+                ", length=" + length +
+                ", day=" + day +
+                ", lesson=" + lesson +
+                ", cancelled=" + cancelled +
+                '}';
     }
 
     public String getCourseName() {

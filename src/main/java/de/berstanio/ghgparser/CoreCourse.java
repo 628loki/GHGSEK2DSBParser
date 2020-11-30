@@ -9,6 +9,7 @@ public class CoreCourse implements Serializable {
     private String courseName;
     private String teacher;
     private ArrayList<Course> courses = new ArrayList<>();
+    public static final long serialVersionUID = -5565522753007317790L;
 
     public String toString(){
         Course course = courses.get(0);
