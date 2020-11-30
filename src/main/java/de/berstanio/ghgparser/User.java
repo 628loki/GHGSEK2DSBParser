@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 public class User implements Serializable{
 
     private ArrayList<CoreCourse> coreCourses = new ArrayList<>();
+    public static final long serialVersionUID = -3002278447638154200L;
 
     public User(ArrayList<CoreCourse> coreCourses){
         setCoreCourses(coreCourses);
@@ -113,7 +114,7 @@ public class User implements Serializable{
     public void saveUser(){
         try {
             File dir = GHGParser.getBasedir();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(dir.getAbsolutePath() + hashCode() + ".yml"));
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(dir.getAbsolutePath() + "/" + hashCode() + ".yml"));
             objectOutputStream.writeObject(this);
             objectOutputStream.close();
         } catch (IOException e) {
