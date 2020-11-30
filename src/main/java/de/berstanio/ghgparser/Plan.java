@@ -33,6 +33,7 @@ public class Plan {
 
     public void refresh(){
         String s = download();
+        if (s.isEmpty()) return;
         String newHash = Base64.getEncoder().encodeToString(DigestUtils.md5(s));
         if (!newHash.equals(getHash())){
             setHash(newHash);
@@ -228,7 +229,7 @@ public class Plan {
             return stringBuilder.toString();
         }catch (IOException e){
             e.printStackTrace();
-            return null;
+            return "";
         }
 
 

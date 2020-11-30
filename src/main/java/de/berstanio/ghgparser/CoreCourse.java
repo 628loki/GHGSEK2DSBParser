@@ -10,6 +10,11 @@ public class CoreCourse implements Serializable {
     private String teacher;
     private ArrayList<Course> courses = new ArrayList<>();
 
+    public String toString(){
+        Course course = courses.get(0);
+        return course.getLesson() + ". Stunde am " + course.getDay() + " " + course.getCourseName() + " mit " + course.getTeacher()    ;
+    }
+
     public String getCourseName() {
         return courseName;
     }
