@@ -74,7 +74,7 @@ public class GHGParser {
                     room = strikes.replace("con", room);
                     name = strikes.replace("con", name);
                     teacher = strikes.replace("con", teacher);
-                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp ->
+                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).size() < course.getLesson() - 1 && getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp ->
                         comp.getCourseName().equalsIgnoreCase(course.getCourseName())
                         && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
                         && comp.getRoom().equalsIgnoreCase(course.getRoom()))){
@@ -105,7 +105,7 @@ public class GHGParser {
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
         ArrayList<User> users = User.loadUsers();
         JahresStundenPlan jahresStundenPlan2 = new JahresStundenPlan();
-        jahresStundenPlan2.getCoreCourses().forEach(coreCourse -> System.out.println(coreCourse.getCourseName() + "  " + coreCourse.getTeacher()));
+        //jahresStundenPlan2.getCoreCourses().forEach(coreCourse -> System.out.println(coreCourse.getCourseName() + "  " + coreCourse.getTeacher()));
         if (users.isEmpty()) {
 
             //Plan planThis = new Plan(week);
@@ -144,12 +144,26 @@ public class GHGParser {
             Plan plan = new Plan(week);
             plan.normalize();
             HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
+            String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
             masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
                 for (int i = 0; i < course.getLength(); i++) {
+                    String room = course.getRoom();
+                    String name = course.getCourseName();
+                    String teacher = course.getTeacher();
+                    if (course.isCancelled()){
+                        room = strikes.replace("con", room);
+                        name = strikes.replace("con", name);
+                        teacher = strikes.replace("con", teacher);
+                    }else if (jahresStundenPlan2.getDayListMap().get(course.getDay()).size() < course.getLesson() - 1 && jahresStundenPlan2.getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp ->
+                            comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                                    && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                                    && comp.getRoom().equalsIgnoreCase(course.getRoom()))){
+                        room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+                    }
                     rawHtmlReference.set(rawHtmlReference.get()
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", course.getRoom())
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", course.getCourseName())
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", course.getTeacher()));
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher));
                 }
             }));
             Files.write(Paths.get("out.htm"), rawHtmlReference.get().getBytes(StandardCharsets.ISO_8859_1));
