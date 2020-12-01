@@ -190,15 +190,22 @@ public class Plan {
             blocks.removeIf(block -> {
                 ArrayList<Course> alreadyRemoved = new ArrayList<>();
                 block.getCourses().removeIf(course -> {
+                    if (course.getRoom().contains(".")){
+                        course.setRoom(course.getRoom().replace(".",""));
+                    }
                     if (!alreadyRemoved.contains(course)) {
                         for (Course courseDup : block.getCourses()) {
+                            if (courseDup.getRoom().contains(".")){
+                                courseDup.setRoom(courseDup.getRoom().replace(".",""));
+                            }
                             if (!courseDup.equals(course)) {
                                 if (courseDup.getCourseName().equalsIgnoreCase(course.getCourseName())) {
-                                    if (courseDup.getRoom().equals(course.getRoom())) {
+                                    if (courseDup.getRoom().contains(course.getRoom())) {
                                         alreadyRemoved.add(course);
                                         alreadyRemoved.add(courseDup);
                                         if (!courseDup.getTeacher().contains("/")){
                                             courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
+
                                         }
                                         return true;
                                     }

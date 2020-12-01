@@ -64,7 +64,7 @@ public class GHGParser {
         Plan plan = new Plan(week);
         plan.normalize();
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
-        String strikes = "<strike>con</strike>";
+        String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
         masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
             for (int i = 0; i < course.getLength(); i++) {
                 String room = course.getRoom();

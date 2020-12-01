@@ -76,6 +76,7 @@ public class User implements Serializable{
         getCoreCourses().forEach(coreCourse -> {
             coreCourse.getCourses().forEach(course -> {
                 Block block = dayListMap.get(course.getDay()).get(course.getLesson() - 1);
+                block.getCourses().forEach(System.out::println);
                 Optional<Course> optionalCourse = block.getCourses().stream().filter(tmp ->
                         tmp.getTeacher().equalsIgnoreCase(course.getTeacher())
                         && tmp.getCourseName().equalsIgnoreCase(course.getCourseName())).findFirst();
