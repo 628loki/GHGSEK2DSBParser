@@ -76,7 +76,6 @@ public class User implements Serializable{
         getCoreCourses().forEach(coreCourse -> {
             coreCourse.getCourses().forEach(course -> {
                 Block block = dayListMap.get(course.getDay()).get(course.getLesson() - 1);
-                block.getCourses().forEach(System.out::println);
                 Optional<Course> optionalCourse = block.getCourses().stream().filter(tmp ->
                         tmp.getTeacher().equalsIgnoreCase(course.getTeacher())
                         && tmp.getCourseName().equalsIgnoreCase(course.getCourseName())).findFirst();
@@ -103,13 +102,19 @@ public class User implements Serializable{
                     User user = (User) objectInputStream.readObject();
                     objectInputStream.close();
                     users.add(user);
-                    file1.delete();
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
             });
         }
         return users;
+    }
+
+    public void deleteUser(){
+        File dir = GHGParser.getBasedir();
+        File file = new File(dir.getAbsolutePath() + "/" + hashCode() + ".yml");
+        file.delete();
+        GHGParser.getUsers().remove(this);
     }
 
     public void saveUser(){
