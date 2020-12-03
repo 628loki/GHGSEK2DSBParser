@@ -74,10 +74,13 @@ public class GHGParser {
                     room = strikes.replace("con", room);
                     name = strikes.replace("con", name);
                     teacher = strikes.replace("con", teacher);
-                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).size() < course.getLesson() - 1 && getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp ->
-                        comp.getCourseName().equalsIgnoreCase(course.getCourseName())
-                        && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
-                        && comp.getRoom().equalsIgnoreCase(course.getRoom()))){
+                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).size() > course.getLesson() - 1 && getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp -> {
+                    System.out.println("Compare: " + course.toString());
+                    System.out.println("Mit: " + comp.toString());
+                    return comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                            && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                            && !comp.getRoom().equalsIgnoreCase(course.getRoom());
+                })){
                     room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
                 }
                 rawHtmlReference.set(rawHtmlReference.get()
@@ -139,34 +142,9 @@ public class GHGParser {
             User user = users.get(0);
             List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
             String rawHtml = String.join("", rawHtmlList);
-            AtomicReference<String> rawHtmlReference = new AtomicReference<>();
-            rawHtmlReference.set(rawHtml);
-            Plan plan = new Plan(week);
-            plan.normalize();
-            HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
-            String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
-            masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
-                for (int i = 0; i < course.getLength(); i++) {
-                    String room = course.getRoom();
-                    String name = course.getCourseName();
-                    String teacher = course.getTeacher();
-                    if (course.isCancelled()){
-                        room = strikes.replace("con", room);
-                        name = strikes.replace("con", name);
-                        teacher = strikes.replace("con", teacher);
-                    }else if (jahresStundenPlan2.getDayListMap().get(course.getDay()).size() < course.getLesson() - 1 && jahresStundenPlan2.getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp ->
-                            comp.getCourseName().equalsIgnoreCase(course.getCourseName())
-                                    && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
-                                    && comp.getRoom().equalsIgnoreCase(course.getRoom()))){
-                        room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
-                    }
-                    rawHtmlReference.set(rawHtmlReference.get()
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher));
-                }
-            }));
-            Files.write(Paths.get("out.htm"), rawHtmlReference.get().getBytes(StandardCharsets.ISO_8859_1));
+            setJahresStundenPlan(new JahresStundenPlan());
+            setRawHtml(rawHtml);
+            Files.write(Paths.get("out.htm"), generateHtmlFile(user, week).getBytes(StandardCharsets.ISO_8859_1));
         } catch (IOException e) {
             e.printStackTrace();
         }
