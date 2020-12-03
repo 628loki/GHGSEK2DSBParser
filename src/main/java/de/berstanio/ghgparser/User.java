@@ -17,6 +17,7 @@ public class User implements Serializable{
 
     public User(ArrayList<CoreCourse> coreCourses){
         setCoreCourses(coreCourses);
+        saveUser();
     }
 
     public HashMap<DayOfWeek, LinkedList<Course>> maskPlan(HashMap<DayOfWeek, LinkedList<Block>> dayListMap){
@@ -102,6 +103,8 @@ public class User implements Serializable{
                     User user = (User) objectInputStream.readObject();
                     objectInputStream.close();
                     users.add(user);
+                    file1.delete();
+                    user.saveUser();
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
                 }
