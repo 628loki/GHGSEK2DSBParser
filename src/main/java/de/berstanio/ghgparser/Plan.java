@@ -15,7 +15,7 @@ import org.jsoup.select.Elements;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
-import java.time.DayOfWeek;
+
 import java.util.*;
 import java.util.stream.Collectors;
 

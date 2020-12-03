@@ -4,7 +4,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.DayOfWeek;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -74,13 +74,9 @@ public class GHGParser {
                     room = strikes.replace("con", room);
                     name = strikes.replace("con", name);
                     teacher = strikes.replace("con", teacher);
-                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).size() > course.getLesson() - 1 && getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp -> {
-                    System.out.println("Compare: " + course.toString());
-                    System.out.println("Mit: " + comp.toString());
-                    return comp.getCourseName().equalsIgnoreCase(course.getCourseName())
-                            && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
-                            && !comp.getRoom().equalsIgnoreCase(course.getRoom());
-                })){
+                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).size() > course.getLesson() - 1 && getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                        && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                        && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
                     room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
                 }
                 rawHtmlReference.set(rawHtmlReference.get()
