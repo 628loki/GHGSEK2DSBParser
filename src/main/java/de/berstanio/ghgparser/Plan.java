@@ -16,6 +16,9 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
 
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,7 +26,9 @@ public class Plan implements Serializable {
 
     private static final long serialVersionUID = 8022109081476857553L;
     private int week = 0;
-    private HashMap<DayOfWeek, LinkedList<Block>> dayListMap;
+    private transient String token;
+    private HashMap<DayOfWeek, LinkedList<Block>> dayListMap = null;
+    private Date lastUpdate = null;
 
     public Plan(int week){
         setWeek(week);
@@ -31,9 +36,25 @@ public class Plan implements Serializable {
     }
 
     public void refresh(){
-        String s = download();
-        if (s.isEmpty()) return;
-        setDayListMap(parse(s));
+        String jsonData = getJSONString();
+        setToken(loadToken(jsonData));
+        Date update = getUpdateDate(jsonData);
+        if (getDayListMap() == null) {
+            if (!loadPlan()) {
+                String s = download();
+                if (s.isEmpty()) return;
+                setDayListMap(parse(s));
+                savePlan();
+                return;
+            }
+        }
+        if (getLastUpdate() != null && update.after(getLastUpdate())){
+            setLastUpdate(update);
+            String s = download();
+            if (s.isEmpty()) return;
+            setDayListMap(parse(s));
+            savePlan();
+        }
     }
 
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
@@ -221,7 +242,7 @@ public class Plan implements Serializable {
     public void savePlan(){
         File dir = GHGParser.getBasedir();
         try {
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(dir.getAbsolutePath() + "/" + getWeek() + ".yml"));
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(dir.getAbsolutePath() + "/plan" + week + ".yml"));
             objectOutputStream.writeObject(this);
             objectOutputStream.close();
         } catch (IOException e) {
@@ -229,15 +250,19 @@ public class Plan implements Serializable {
         }
     }
 
-    public void loadPlan(){
+    public boolean loadPlan(){
         File dir = GHGParser.getBasedir();
         try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(dir.getAbsolutePath() + "/" + getWeek() + ".yml"));
+            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(dir.getAbsolutePath() + "/plan" + week + ".yml"));
             Plan plan = (Plan) objectInputStream.readObject();
             objectInputStream.close();
             this.setDayListMap(plan.getDayListMap());
-        } catch (Throwable e) {
+            return true;
+        } catch (FileNotFoundException e) {
+            return false;
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -259,11 +284,9 @@ public class Plan implements Serializable {
             e.printStackTrace();
             return "";
         }
-
-
     }
 
-    public String getToken(){
+    public String getJSONString(){
         try {
             URL connectwat = new URL("https://mobileapi.dsbcontrol.de/dsbtimetables?authid=a7f2b46b-4d23-446e-8382-404d55c31f90");
             HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
@@ -276,14 +299,38 @@ public class Plan implements Serializable {
             while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
                 stringBuilder.append(c);
             }
-            //JSONParser jsonParser = new JSONParser();
-            JSONArray array = (JSONArray) new JSONArray(stringBuilder.toString());
-            JSONObject object = (JSONObject) array.get(0);
-            return (String) object.get("Id");
+
+            return stringBuilder.toString();
         }catch (IOException e){
             e.printStackTrace();
             return "";
         }
+    }
+
+    public Date getUpdateDate(String s)  {
+        JSONArray array = new JSONArray(s);
+        JSONObject object = (JSONObject) array.get(0);
+        String date = (String) object.get("Date");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy kk:mm");
+        try {
+            return simpleDateFormat.parse(date);
+        } catch (ParseException e) {
+            return new Date();
+        }
+    }
+
+    public String loadToken(String s){
+        JSONArray array = new JSONArray(s);
+        JSONObject object = (JSONObject) array.get(0);
+        return (String) object.get("Id");
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public int getWeek() {
@@ -300,6 +347,14 @@ public class Plan implements Serializable {
 
     public void setDayListMap(HashMap<DayOfWeek, LinkedList<Block>> dayListMap) {
         this.dayListMap = dayListMap;
+    }
+
+    public Date getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(Date lastUpdate) {
+        this.lastUpdate = lastUpdate;
     }
 
     private class Uebertrag {

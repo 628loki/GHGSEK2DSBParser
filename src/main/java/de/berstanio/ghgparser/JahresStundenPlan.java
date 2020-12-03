@@ -11,7 +11,10 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
@@ -140,32 +143,26 @@ public class JahresStundenPlan extends Plan {
         return finished;
     }
 
-
     @Override
-    public String getToken() {
+    public Date getUpdateDate(String s) {
+        JSONArray array = new JSONArray(s);
+        JSONObject object = (JSONObject) array.get(1);
+        String date = (String) object.get("Date");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy kk:mm");
         try {
-            URL connectwat = new URL("https://mobileapi.dsbcontrol.de/dsbtimetables?authid=a7f2b46b-4d23-446e-8382-404d55c31f90");
-            HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
-
-            urlConnection.connect();
-
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
-            char c;
-            StringBuilder stringBuilder = new StringBuilder();
-            while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
-                stringBuilder.append(c);
-            }
-            System.out.println(stringBuilder.toString());
-            //JSONParser jsonParser = new JSONParser();
-            JSONArray array = new JSONArray(stringBuilder.toString());
-            JSONObject object = (JSONObject) array.get(1);
-            return (String) object.get("Id");
-        }catch (IOException e){
+            return simpleDateFormat.parse(date);
+        } catch (ParseException e) {
             e.printStackTrace();
-            return "";
+            return new Date();
         }
     }
-
+    @Override
+    public String loadToken(String s){
+        JSONArray array = new JSONArray(s);
+        JSONObject object = (JSONObject) array.get(1);
+        return (String) object.get("Id");
+    }
+    @Override
     public int getWeek(){
         try {
             URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/data.js");
