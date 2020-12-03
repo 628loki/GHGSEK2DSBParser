@@ -13,16 +13,15 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.time.DayOfWeek;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Plan {
+public class Plan implements Serializable {
 
-    private String hash = null;
+    private static final long serialVersionUID = 8022109081476857553L;
     private int week = 0;
     private HashMap<DayOfWeek, LinkedList<Block>> dayListMap;
 
@@ -34,11 +33,7 @@ public class Plan {
     public void refresh(){
         String s = download();
         if (s.isEmpty()) return;
-        String newHash = Base64.getEncoder().encodeToString(DigestUtils.md5(s));
-        if (!newHash.equals(getHash())){
-            setHash(newHash);
-            setDayListMap(parse(s));
-        }
+        setDayListMap(parse(s));
     }
 
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
@@ -220,6 +215,29 @@ public class Plan {
         });
     }
 
+    public void savePlan(){
+        File dir = GHGParser.getBasedir();
+        try {
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(new FileOutputStream(dir.getAbsolutePath() + "/" + getWeek() + ".yml"));
+            objectOutputStream.writeObject(this);
+            objectOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadPlan(){
+        File dir = GHGParser.getBasedir();
+        try {
+            ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(dir.getAbsolutePath() + "/" + getWeek() + ".yml"));
+            Plan plan = (Plan) objectInputStream.readObject();
+            objectInputStream.close();
+            this.setDayListMap(plan.getDayListMap());
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
     public String download(){
         try {
             URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + getWeek() + "/c/c00023.htm");
@@ -263,13 +281,6 @@ public class Plan {
             e.printStackTrace();
             return "";
         }
-    }
-    public String getHash() {
-        return hash;
-    }
-
-    public void setHash(String hash) {
-        this.hash = hash;
     }
 
     public int getWeek() {

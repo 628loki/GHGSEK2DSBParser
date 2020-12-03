@@ -1,11 +1,13 @@
 package de.berstanio.ghgparser;
 
+import java.io.Serializable;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
-public class Block {
+public class Block implements Serializable {
 
+    private static final long serialVersionUID = -7231586899183399277L;
     private DayOfWeek day;
     private int blockNr;
     private LinkedList<Course> courses = new LinkedList<>();
