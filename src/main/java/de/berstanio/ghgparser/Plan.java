@@ -176,6 +176,7 @@ public class Plan implements Serializable {
 
             if ((course.getRoom().isEmpty() && course.getCourseName().equalsIgnoreCase("PADD"))){
                 course.setLength(2);
+                course.setRoom("EXT");
             }
         });
         getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
