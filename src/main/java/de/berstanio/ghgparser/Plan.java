@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
+import java.net.ConnectException;
 import java.net.URL;
 
 import java.text.ParseException;
@@ -32,29 +33,34 @@ public class Plan implements Serializable {
 
     public Plan(int week){
         setWeek(week);
-        refresh();
+        if (!refresh()){
+            throw new DSBNotAccesibleException();
+        }
     }
 
-    public void refresh(){
+    public boolean refresh(){
         String jsonData = getJSONString();
+        if (jsonData.isEmpty()) return false;
         setToken(loadToken(jsonData));
         Date update = getUpdateDate(jsonData);
         if (getDayListMap() == null) {
             if (!loadPlan()) {
                 String s = download();
-                if (s.isEmpty()) return;
+                if (s.isEmpty()) return false;
                 setDayListMap(parse(s));
                 savePlan();
-                return;
+                return true;
             }
         }
         if (getLastUpdate() != null && update.after(getLastUpdate())){
             setLastUpdate(update);
             String s = download();
-            if (s.isEmpty()) return;
+            if (s.isEmpty()) return false;
             setDayListMap(parse(s));
             savePlan();
+            return true;
         }
+        return false;
     }
 
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
