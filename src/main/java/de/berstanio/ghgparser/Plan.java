@@ -50,6 +50,7 @@ public class Plan implements Serializable {
                 String s = download();
                 if (s.isEmpty()) return;
                 setDayListMap(parse(s));
+                setLastUpdate(update);
                 savePlan();
                 return;
             }
@@ -59,8 +60,10 @@ public class Plan implements Serializable {
             String s = download();
             if (s.isEmpty()) return;
             setDayListMap(parse(s));
+            setLastUpdate(update);
             savePlan();
         }
+        setLastUpdate(update);
     }
 
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
@@ -263,6 +266,7 @@ public class Plan implements Serializable {
             Plan plan = (Plan) objectInputStream.readObject();
             objectInputStream.close();
             this.setDayListMap(plan.getDayListMap());
+            this.setLastUpdate(plan.getLastUpdate());
             return true;
         } catch (FileNotFoundException e) {
             return false;
