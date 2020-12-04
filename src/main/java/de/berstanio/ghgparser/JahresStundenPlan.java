@@ -23,7 +23,7 @@ public class JahresStundenPlan extends Plan {
 
     private ArrayList<CoreCourse> coreCourses;
 
-    public JahresStundenPlan() {
+    public JahresStundenPlan() throws DSBNotLoadableException {
         super(0);
         setCoreCourses(loadCoreCourses());
     }

@@ -31,36 +31,36 @@ public class Plan implements Serializable {
     private HashMap<DayOfWeek, LinkedList<Block>> dayListMap = null;
     private Date lastUpdate = null;
 
-    public Plan(int week){
+    public Plan(int week) throws DSBNotLoadableException {
         setWeek(week);
-        if (!refresh()){
-            throw new DSBNotAccesibleException();
+        try {
+            refresh();
+        } catch (IOException e) {
+            throw new DSBNotLoadableException(e);
         }
     }
 
-    public boolean refresh(){
+    public void refresh() throws IOException {
         String jsonData = getJSONString();
-        if (jsonData.isEmpty()) return false;
+        if (jsonData.isEmpty()) return;
         setToken(loadToken(jsonData));
         Date update = getUpdateDate(jsonData);
         if (getDayListMap() == null) {
             if (!loadPlan()) {
                 String s = download();
-                if (s.isEmpty()) return false;
+                if (s.isEmpty()) return;
                 setDayListMap(parse(s));
                 savePlan();
-                return true;
+                return;
             }
         }
         if (getLastUpdate() != null && update.after(getLastUpdate())){
             setLastUpdate(update);
             String s = download();
-            if (s.isEmpty()) return false;
+            if (s.isEmpty()) return;
             setDayListMap(parse(s));
             savePlan();
-            return true;
         }
-        return false;
     }
 
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
@@ -272,45 +272,34 @@ public class Plan implements Serializable {
         }
     }
 
-    public String download(){
-        try {
-            URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + getWeek() + "/c/c00023.htm");
-            HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
+    public String download() throws IOException{
+        URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + getWeek() + "/c/c00023.htm");
+        HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
 
-            urlConnection.connect();
+        urlConnection.connect();
 
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
-            char c;
-            StringBuilder stringBuilder = new StringBuilder();
-            while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
-                stringBuilder.append(c);
-            }
-            return stringBuilder.toString();
-        }catch (IOException e){
-            e.printStackTrace();
-            return "";
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
+        char c;
+        StringBuilder stringBuilder = new StringBuilder();
+        while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
+            stringBuilder.append(c);
         }
+        return stringBuilder.toString();
     }
 
-    public String getJSONString(){
-        try {
-            URL connectwat = new URL("https://mobileapi.dsbcontrol.de/dsbtimetables?authid=a7f2b46b-4d23-446e-8382-404d55c31f90");
-            HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
+    public String getJSONString() throws IOException{
+        URL connectwat = new URL("https://mobileapi.dsbcontrol.de/dsbtimetables?authid=a7f2b46b-4d23-446e-8382-404d55c31f90");
+        HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
 
-            urlConnection.connect();
+        urlConnection.connect();
 
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
-            char c;
-            StringBuilder stringBuilder = new StringBuilder();
-            while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
-                stringBuilder.append(c);
-            }
-
-            return stringBuilder.toString();
-        }catch (IOException e){
-            e.printStackTrace();
-            return "";
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
+        char c;
+        StringBuilder stringBuilder = new StringBuilder();
+        while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
+            stringBuilder.append(c);
         }
+        return stringBuilder.toString();
     }
 
     public Date getUpdateDate(String s)  {

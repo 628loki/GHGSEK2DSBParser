@@ -16,7 +16,7 @@ public class GHGParser {
     private static JahresStundenPlan jahresStundenPlan;
     private static File basedir;
 
-    public static void init(InputStream rawHtmlStream, File basedir) throws IOException {
+    public static void init(InputStream rawHtmlStream, File basedir) throws IOException, DSBNotLoadableException {
         setBasedir(basedir);
         ArrayList<User> users = User.loadUsers();
         setUsers(users);
@@ -58,9 +58,10 @@ public class GHGParser {
 
     }
 
-    public static String generateHtmlFile(User user, int week){
+    public static String generateHtmlFile(User user, int week) throws DSBNotLoadableException {
         AtomicReference<String> rawHtmlReference = new AtomicReference<>();
         rawHtmlReference.set(rawHtml);
+
         Plan plan = new Plan(week);
         plan.normalize();
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
@@ -85,7 +86,6 @@ public class GHGParser {
                         .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher));
             }
         }));
-
         return rawHtmlReference.get();
     }
 
@@ -93,7 +93,7 @@ public class GHGParser {
         getUsers().forEach(User::saveUser);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)  {
         try {
             Class.forName("de.berstanio.ghgparser.Logger");
         } catch (ClassNotFoundException e) {
@@ -103,13 +103,17 @@ public class GHGParser {
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
         ArrayList<User> users = User.loadUsers();
-        JahresStundenPlan jahresStundenPlan2 = new JahresStundenPlan();
         //jahresStundenPlan2.getCoreCourses().forEach(coreCourse -> System.out.println(coreCourse.getCourseName() + "  " + coreCourse.getTeacher()));
         if (users.isEmpty()) {
 
             //Plan planThis = new Plan(week);
             //Plan planNext = new Plan(week + 1);
-            JahresStundenPlan jahresStundenPlan = new JahresStundenPlan();
+            JahresStundenPlan jahresStundenPlan = null;
+            try {
+                jahresStundenPlan = new JahresStundenPlan();
+            } catch (DSBNotLoadableException e) {
+                e.printStackTrace();
+            }
             System.out.println(jahresStundenPlan.getToken());
             Scanner scanner = new Scanner(System.in);
             ArrayList<CoreCourse> coursesTmp = jahresStundenPlan.getCoreCourses();
@@ -132,16 +136,21 @@ public class GHGParser {
             masked.forEach((dayOfWeek, courses) -> courses.forEach(System.out::println));
         });*/
         users.forEach(User::saveUser);
-
+        try {
+            setJahresStundenPlan(new JahresStundenPlan());
+        } catch (DSBNotLoadableException e) {
+            e.printStackTrace();
+        }
         try {
             // TODO: 27.11.2020 Schwimmen falsch erkannt
             User user = users.get(0);
             List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
             String rawHtml = String.join("", rawHtmlList);
-            setJahresStundenPlan(new JahresStundenPlan());
+
             setRawHtml(rawHtml);
+            System.out.println(generateHtmlFile(user, week));
             Files.write(Paths.get("out.htm"), generateHtmlFile(user, week).getBytes(StandardCharsets.ISO_8859_1));
-        } catch (IOException e) {
+        } catch (IOException | DSBNotLoadableException e) {
             e.printStackTrace();
         }
     }
