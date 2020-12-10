@@ -63,6 +63,13 @@ public class Plan implements Serializable {
             setLastUpdate(update);
             savePlan();
         }
+        if (getLastUpdate() == null){
+            String s = download();
+            if (s.isEmpty()) return;
+            setDayListMap(parse(s));
+            setLastUpdate(update);
+            savePlan();
+        }
         setLastUpdate(update);
         savePlan();
     }
