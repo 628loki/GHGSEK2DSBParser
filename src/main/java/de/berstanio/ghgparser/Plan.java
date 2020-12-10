@@ -64,10 +64,12 @@ public class Plan implements Serializable {
             savePlan();
         }
         setLastUpdate(update);
+        savePlan();
     }
 
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
-        s = s.replace("LFR11", "LKFR12").replace("EXT.", "EXT");
+        s = s.replace("LFR11", "LKFR12");
+        s = s.replace("EXT.", "EXT");
         s = s.replace("201MU1", "201MU");
         s = s.replace("211MU2","211MU");
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = new HashMap<>();

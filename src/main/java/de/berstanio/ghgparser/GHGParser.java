@@ -149,7 +149,7 @@ public class GHGParser {
 
             setRawHtml(rawHtml);
             System.out.println(generateHtmlFile(user, week));
-            Files.write(Paths.get("out.htm"), generateHtmlFile(user, week + 1).getBytes(StandardCharsets.ISO_8859_1));
+            Files.write(Paths.get("out.htm"), generateHtmlFile(user, week).getBytes(StandardCharsets.ISO_8859_1));
         } catch (IOException | DSBNotLoadableException e) {
             e.printStackTrace();
         }
