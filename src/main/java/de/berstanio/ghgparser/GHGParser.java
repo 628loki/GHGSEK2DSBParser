@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GHGParser {
 
@@ -15,9 +16,14 @@ public class GHGParser {
     private static String rawHtml;
     private static JahresStundenPlan jahresStundenPlan;
     private static File basedir;
+    private static int year = 0;
+    private static HashMap<String, String> toReplace11 = new HashMap<>();
+    private static HashMap<String, String> toReplace12 = new HashMap<>();
 
     public static void init(InputStream rawHtmlStream, File basedir) throws IOException, DSBNotLoadableException {
         setBasedir(basedir);
+
+        readMappings();
         ArrayList<User> users = User.loadUsers();
         setUsers(users);
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream));
@@ -27,8 +33,12 @@ public class GHGParser {
             rawHtmlBuilder.append(line);
         }
         setRawHtml(rawHtmlBuilder.toString());
-        Calendar calendar = Calendar.getInstance();
-        int week = calendar.get(Calendar.WEEK_OF_YEAR);
+        if (Files.exists(Paths.get(getBasedir() + "/year.yml"))){
+            String yearString = new BufferedReader(new FileReader(basedir.getAbsolutePath() + "/year.yml")).readLine();
+            year = Integer.parseInt(yearString);
+        }else {
+            setYear(12);
+        }
 
         setJahresStundenPlan(new JahresStundenPlan());
     }
@@ -89,16 +99,36 @@ public class GHGParser {
         return rawHtmlReference.get();
     }
 
+    public static HashMap<String, String> getMappings(){
+        return getYear() == 12 ? toReplace12 : toReplace11;
+    }
+
+    private static void readMappings(){
+        new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings11.txt")))
+                .lines().forEach(s -> {
+                    String[] split = s.split(">");
+                    toReplace11.put(split[0], split[1]);
+        });
+
+        new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings12.txt")))
+                .lines().forEach(s -> {
+            String[] split = s.split(">");
+            toReplace12.put(split[0], split[1]);
+        });
+
+    }
+
     public static void close(){
         getUsers().forEach(User::saveUser);
     }
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) throws IOException, DSBNotLoadableException {
         try {
             Class.forName("de.berstanio.ghgparser.Logger");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
+        init(GHGParser.class.getResourceAsStream("/rawPage.htm"), new File("user/"));
         setBasedir(new File("user/"));
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
@@ -143,6 +173,7 @@ public class GHGParser {
         }
         try {
             // TODO: 27.11.2020 Schwimmen falsch erkannt
+            //setYear(11);
             User user = users.get(0);
             List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
             String rawHtml = String.join("", rawHtmlList);
@@ -185,5 +216,16 @@ public class GHGParser {
 
     public static void setBasedir(File basedir) {
         GHGParser.basedir = basedir;
+    }
+
+    public static int getYear() {
+        return year;
+    }
+
+    public static void setYear(int year) throws DSBNotLoadableException, IOException {
+        GHGParser.year = year;
+        Files.write(Paths.get(getBasedir().getAbsolutePath() + "/year.yml"), (year + "").getBytes(StandardCharsets.UTF_8));
+        Arrays.stream(getBasedir().listFiles()).filter(File::isFile).filter(file -> file.getName().contains("plan")).forEach(File::delete);
+        setJahresStundenPlan(new JahresStundenPlan());
     }
 }

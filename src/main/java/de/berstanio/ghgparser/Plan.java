@@ -1,6 +1,5 @@
 package de.berstanio.ghgparser;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 /*import org.json.simple.JSONArray;
@@ -21,6 +20,7 @@ import java.text.ParseException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class Plan implements Serializable {
@@ -75,10 +75,12 @@ public class Plan implements Serializable {
     }
 
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
-        s = s.replace("LFR11", "LKFR12");
-        s = s.replace("EXT.", "EXT");
-        s = s.replace("201MU1", "201MU");
-        s = s.replace("211MU2","211MU");
+        AtomicReference<String> replacedString = new AtomicReference<>(s);
+        GHGParser.getMappings().forEach((toReplace, replacement) -> {
+            replacedString.set(replacedString.get().replaceAll(toReplace, replacement));
+        });
+        s = replacedString.get();
+
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = new HashMap<>();
         dayListMap.put(DayOfWeek.MONDAY, new LinkedList<>());
         dayListMap.put(DayOfWeek.TUESDAY, new LinkedList<>());
@@ -286,7 +288,8 @@ public class Plan implements Serializable {
     }
 
     public String download() throws IOException{
-        URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + getWeek() + "/c/c00023.htm");
+        String room = GHGParser.getYear() == 12 ? "c00023" : "c00022";
+        URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + getWeek() + "/c/" + room + ".htm");
         HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
 
         urlConnection.connect();
@@ -374,50 +377,3 @@ public class Plan implements Serializable {
 
     }
 }
-
-/*        if (duplicates.size() == 3){
-                        if (course.getCourseName().substring(0, 2).equalsIgnoreCase("LK")){
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde richtig LK erkannt");
-                        }else {
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde falsch LK erkannt");
-                        }
-                    }else if(duplicates.size() % 2 == 0){
-                        if (course.getCourseName().substring(0, 2).equalsIgnoreCase("gk")
-                                || course.getCourseName().substring(0, 2).equalsIgnoreCase("ds")
-                                || course.getCourseName().charAt(course.getCourseName().length() - 1) == 'z'
-                                || course.getCourseName().equalsIgnoreCase("SPTH")){
-                            System.out.println(duplicates.size());
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde richtig gk erkannt");
-                        }else {
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde falsch gk erkannt");
-
-                        }
-                    }else if (duplicates.size() == 1){
-                        String name = course.getCourseName();
-                        if (name.equalsIgnoreCase("PADD")
-                                || name.equalsIgnoreCase("LEA")
-                                || name.equalsIgnoreCase("FITN")
-                                || name.equalsIgnoreCase("BADM")
-                                || name.equalsIgnoreCase("VOL")
-                                || name.equalsIgnoreCase("HOCK")
-                                || name.equalsIgnoreCase("SCHW1")
-                                || name.equalsIgnoreCase("TENN")
-                                || name.equalsIgnoreCase("VOL-J")
-                                || name.equalsIgnoreCase("FUS")
-                                || name.equalsIgnoreCase("GYM")
-                                || name.equalsIgnoreCase("BASK")
-                                || name.equalsIgnoreCase("OS-Orc")
-                                || name.equalsIgnoreCase("OS-")){
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde richtig Sportkurs/o.ä. erkannt");
-                        }else {
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde falsch Sportkurs/o.ä. erkannt");
-                        }
-                    }else if (duplicates.size() == 5){
-                        if (course.getCourseName().equalsIgnoreCase("DELF")){
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde richtig DELF erkannt");
-                        }else {
-                            System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " wurde falsch DELF erkannt");
-                        }
-                    }else {
-                        System.out.println("Für CourseName: " + course.getCourseName() + " mit dem Lehrer: " + course.getTeacher() + " gabs " + duplicates.size() + " identische");
-                    }*/

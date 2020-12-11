@@ -1,0 +1,5 @@
+L([A-Z][A-Z]11)>LK$1
+g([a-z][a-z]11)>gk$1
+EXT.>EXT
+201MU1>201MU
+211MU2>211MU
