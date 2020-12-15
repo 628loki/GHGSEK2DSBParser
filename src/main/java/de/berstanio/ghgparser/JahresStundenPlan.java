@@ -2,10 +2,6 @@ package de.berstanio.ghgparser;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-/*import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;*/
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedInputStream;
@@ -23,8 +19,8 @@ public class JahresStundenPlan extends Plan {
 
     private ArrayList<CoreCourse> coreCourses;
 
-    public JahresStundenPlan() throws DSBNotLoadableException {
-        super(0);
+    public JahresStundenPlan(int year) throws DSBNotLoadableException {
+        super(year,0);
         setCoreCourses(loadCoreCourses());
     }
 

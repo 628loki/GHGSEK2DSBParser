@@ -4,19 +4,16 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GHGParser {
 
     private static ArrayList<User> users;
     private static String rawHtml;
-    private static JahresStundenPlan jahresStundenPlan;
+    private static JahresStundenPlan jahresStundenPlan11;
+    private static JahresStundenPlan jahresStundenPlan12;
     private static File basedir;
-    private static int year = 0;
     private static HashMap<String, String> toReplace11 = new HashMap<>();
     private static HashMap<String, String> toReplace12 = new HashMap<>();
 
@@ -33,14 +30,9 @@ public class GHGParser {
             rawHtmlBuilder.append(line);
         }
         setRawHtml(rawHtmlBuilder.toString());
-        if (Files.exists(Paths.get(getBasedir() + "/year.yml"))){
-            String yearString = new BufferedReader(new FileReader(basedir.getAbsolutePath() + "/year.yml")).readLine();
-            year = Integer.parseInt(yearString);
-        }else {
-            setYear(12);
-        }
 
-        setJahresStundenPlan(new JahresStundenPlan());
+        setJahresStundenPlan(new JahresStundenPlan(11));
+        setJahresStundenPlan(new JahresStundenPlan(12));
     }
 
     public static ArrayList<CoreCourse> remainingCoreCourses(ArrayList<CoreCourse> choosen, ArrayList<CoreCourse> remaining){
@@ -72,7 +64,7 @@ public class GHGParser {
         AtomicReference<String> rawHtmlReference = new AtomicReference<>();
         rawHtmlReference.set(rawHtml);
 
-        Plan plan = new Plan(week);
+        Plan plan = new Plan(user.getYear(), week);
         plan.normalize();
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
         String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
@@ -85,7 +77,9 @@ public class GHGParser {
                     room = strikes.replace("con", room);
                     name = strikes.replace("con", name);
                     teacher = strikes.replace("con", teacher);
-                }else if (getJahresStundenPlan().getDayListMap().get(course.getDay()).size() > course.getLesson() - 1 && getJahresStundenPlan().getDayListMap().get(course.getDay()).get(course.getLesson() - 1).getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                }else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
+                        && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
+                        .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
                         && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
                         && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
                     room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
@@ -99,8 +93,8 @@ public class GHGParser {
         return rawHtmlReference.get();
     }
 
-    public static HashMap<String, String> getMappings(){
-        return getYear() == 12 ? toReplace12 : toReplace11;
+    public static HashMap<String, String> getMappings(int year){
+        return year == 12 ? toReplace12 : toReplace11;
     }
 
     private static void readMappings(){
@@ -116,10 +110,6 @@ public class GHGParser {
             toReplace12.put(split[0], split[1]);
         });
 
-    }
-
-    public static void close(){
-        getUsers().forEach(User::saveUser);
     }
 
     public static void main(String[] args) throws IOException, DSBNotLoadableException {
@@ -140,7 +130,7 @@ public class GHGParser {
             //Plan planNext = new Plan(week + 1);
             JahresStundenPlan jahresStundenPlan = null;
             try {
-                jahresStundenPlan = new JahresStundenPlan();
+                jahresStundenPlan = new JahresStundenPlan(12);
             } catch (DSBNotLoadableException e) {
                 e.printStackTrace();
             }
@@ -159,7 +149,7 @@ public class GHGParser {
                     coursesTmp.trimToSize();
                 }
             }
-            users.add(new User(choosen));
+            users.add(new User(choosen, 12));
         }
         /*users.forEach(user -> {
             HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(new Plan(week).getDayListMap());
@@ -167,7 +157,7 @@ public class GHGParser {
         });*/
         users.forEach(User::saveUser);
         try {
-            setJahresStundenPlan(new JahresStundenPlan());
+            setJahresStundenPlan(new JahresStundenPlan(12));
         } catch (DSBNotLoadableException e) {
             e.printStackTrace();
         }
@@ -202,12 +192,16 @@ public class GHGParser {
         GHGParser.rawHtml = rawHtml;
     }
 
-    public static JahresStundenPlan getJahresStundenPlan() {
-        return jahresStundenPlan;
+    public static JahresStundenPlan getJahresStundenPlan(int year) {
+        return year == 12 ? jahresStundenPlan12 : jahresStundenPlan11;
     }
 
     public static void setJahresStundenPlan(JahresStundenPlan jahresStundenPlan) {
-        GHGParser.jahresStundenPlan = jahresStundenPlan;
+        if (jahresStundenPlan.getYear() == 11){
+            jahresStundenPlan11 = jahresStundenPlan;
+        }else {
+            jahresStundenPlan12 = jahresStundenPlan;
+        }
     }
 
     public static File getBasedir() {
@@ -216,16 +210,5 @@ public class GHGParser {
 
     public static void setBasedir(File basedir) {
         GHGParser.basedir = basedir;
-    }
-
-    public static int getYear() {
-        return year;
-    }
-
-    public static void setYear(int year) throws DSBNotLoadableException, IOException {
-        GHGParser.year = year;
-        Files.write(Paths.get(getBasedir().getAbsolutePath() + "/year.yml"), (year + "").getBytes(StandardCharsets.UTF_8));
-        Arrays.stream(getBasedir().listFiles()).filter(File::isFile).filter(file -> file.getName().contains("plan")).forEach(File::delete);
-        setJahresStundenPlan(new JahresStundenPlan());
     }
 }

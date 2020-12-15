@@ -1,8 +1,6 @@
 package de.berstanio.ghgparser;
 
 import java.io.Serializable;
-
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class Block implements Serializable {

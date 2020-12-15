@@ -13,10 +13,12 @@ import java.util.stream.Stream;
 public class User implements Serializable{
 
     private ArrayList<CoreCourse> coreCourses = new ArrayList<>();
-    public static final long serialVersionUID = -3002278447638154200L;
+    private int year;
+    public static final long serialVersionUID = -2636346567614007956L;
 
-    public User(ArrayList<CoreCourse> coreCourses){
+    public User(ArrayList<CoreCourse> coreCourses, int year){
         setCoreCourses(coreCourses);
+        setYear(year);
         saveUser();
     }
 
@@ -107,6 +109,7 @@ public class User implements Serializable{
                     user.saveUser();
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
+                    file1.delete();
                 }
             });
         }
@@ -138,5 +141,13 @@ public class User implements Serializable{
 
     public void setCoreCourses(ArrayList<CoreCourse> coreCourses) {
         this.coreCourses = coreCourses;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
     }
 }

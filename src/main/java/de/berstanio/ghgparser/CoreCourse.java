@@ -2,7 +2,6 @@ package de.berstanio.ghgparser;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.StringJoiner;
 
 public class CoreCourse implements Serializable {
 
