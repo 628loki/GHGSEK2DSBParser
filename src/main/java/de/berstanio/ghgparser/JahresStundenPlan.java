@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 public class JahresStundenPlan extends Plan {
 
     private ArrayList<CoreCourse> coreCourses;
+    private static final long serialVersionUID = -2671162280384342988L;
 
     public JahresStundenPlan(int year) throws DSBNotLoadableException {
         super(year,0);
