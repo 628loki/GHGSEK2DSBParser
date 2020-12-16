@@ -61,10 +61,13 @@ public class GHGParser {
     }
 
     public static String generateHtmlFile(User user, int week) throws DSBNotLoadableException {
+        return generateHtmlFile(user, new Plan(user.getYear(), week));
+    }
+
+    public static String generateHtmlFile(User user, Plan plan) throws DSBNotLoadableException {
         AtomicReference<String> rawHtmlReference = new AtomicReference<>();
         rawHtmlReference.set(rawHtml);
 
-        Plan plan = new Plan(user.getYear(), week);
         plan.normalize();
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
         String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
@@ -80,8 +83,8 @@ public class GHGParser {
                 }else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
                         && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
                         .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
-                        && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
-                        && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
+                                && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                                && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
                     room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
                 }
                 rawHtmlReference.set(rawHtmlReference.get()
