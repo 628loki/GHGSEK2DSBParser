@@ -281,7 +281,11 @@ public class Plan implements Serializable {
 
     public String download() throws IOException{
         String room = getYear() == 12 ? "c00023" : "c00022";
-        URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + getWeek() + "/c/" + room + ".htm");
+        String week = getWeek() + "";
+        if (week.length() == 1){
+            week = "0" + week;
+        }
+        URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + week + "/c/" + room + ".htm");
         HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
 
         urlConnection.connect();
