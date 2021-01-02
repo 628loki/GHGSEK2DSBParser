@@ -285,6 +285,9 @@ public class Plan implements Serializable {
         if (week.length() == 1){
             week = "0" + week;
         }
+        if (getWeek() >= 54){
+            week = "01";
+        }
         URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + week + "/c/" + room + ".htm");
         HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
 
