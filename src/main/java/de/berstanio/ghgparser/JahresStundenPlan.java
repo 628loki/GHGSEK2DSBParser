@@ -15,8 +15,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
 
+//Die Klasse soll den "Standart-Stundenplan" representieren, wie er ohne Änderung wäre.
 public class JahresStundenPlan extends Plan {
 
+    //Eine Liste von möglich wählbaren Kursen
     private ArrayList<CoreCourse> coreCourses;
     private static final long serialVersionUID = -2671162280384342988L;
 
@@ -25,9 +27,13 @@ public class JahresStundenPlan extends Plan {
         setCoreCourses(loadCoreCourses());
     }
 
+    //Das laden der wählbaren Kurse
     public ArrayList<CoreCourse> loadCoreCourses(){
+        //Erstmal den Plan im Standardformat holen
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = getDayListMap();
 
+        //Die Struktur des HTMLs mit den Stundenplan unterscheidet scih ein wenig. Bei dem einen kommt "Raum", "Fach","Lehrer"
+        //bei dem anderen lehrer, Fach, Raum. Deshalb müssen Lehrer und Raum hier getauscht werden
         ArrayList<Course> alreadySwapped = new ArrayList<>();
         dayListMap.forEach((dayOfWeek, blocks) -> {
             blocks.forEach(block -> {
@@ -42,22 +48,27 @@ public class JahresStundenPlan extends Plan {
                 });
             });
         });
+        //Ins Standard-Format bringen
         normalize();
 
+        //Kurse, die ich schon hinzugefügt habe(z.B. Kurse die über 2 Stunden gehen, sind 2x drin)
         ArrayList<Course> alreadyAdd = new ArrayList<>();
 
+        //Die generierten Wählbaren Kurse
         ArrayList<CoreCourse> finished = new ArrayList<>();
 
-
+        //Über alles rüberiterieren
         for (DayOfWeek day : dayListMap.keySet().stream().sorted().collect(Collectors.toList())) {
             LinkedList<Block> blocks = dayListMap.get(day);
             for (Block block : blocks) {
                 for (Course course : block.getCourses()) {
+                    //Die duplicates Liste besagt, welche Kurse zusammengehören
                     LinkedList<Course> duplicates = new LinkedList<>();
                     if (alreadyAdd.contains(course)) continue;
                     duplicates.add(course);
                     alreadyAdd.add(course);
 
+                    //Geht nochmal über die gesammte Liste rüber und schaut, was für duplicate er findet(ziemlich Perfomancelastig glaube ich)
                     dayListMap.values().forEach(blocksDup -> {
                         blocksDup.forEach(blockDup -> {
                             blockDup.getCourses().forEach(courseDup -> {
@@ -72,7 +83,7 @@ public class JahresStundenPlan extends Plan {
                             });
                         });
                     });
-
+                    //Wir haben dämliche Einzelfälle, in denen Stunden nicht zu einem Kurs gehören... Die müssen dann getrennt werden.
                     if (course.getCourseName().contains("-vb") || course.getCourseName().contains("DELF")) {
                         duplicates.stream().forEachOrdered(course1 -> {
                             CoreCourse coreCourse = new CoreCourse();
@@ -83,7 +94,9 @@ public class JahresStundenPlan extends Plan {
                         });
                         continue;
                     }
-
+                    //Eigentlich sollte fast immer der duplicates.size() == 3 ausgeführt werden...
+                    //Die Außnahme ist halt, wenn die size ein vielfaches von 2 ist und != 2. Das heißt dann, dass ein Lehrer
+                    //im Grundkurs ein Fach mehrmals hat(also z.B. zwei MatheGKs beim gleichen Lehrer)
                     if (duplicates.size() == 3) {
                         CoreCourse coreCourse = new CoreCourse();
                         coreCourse.setCourseName(course.getCourseName());
@@ -103,6 +116,10 @@ public class JahresStundenPlan extends Plan {
                                 coreCourse.setCourseName(course.getCourseName());
                                 coreCourse.setTeacher(course.getTeacher());
                                 Course firstOrSecond;
+                                //Um die verschiedenen Kurse zu unterschieden muss man schauen, was für Kurse sonst noch gleichzeitig laufen
+                                //Also der eine gkMa hat immer mit dem gleichen gkPhy Unterricht
+                                //Deshalb schaue ich mir den 1. oder 2. gleichzeitig laufenden Kurs an und vergleiche das dann.
+                                //(den 2. nehme ich, falls) der Kurs als erstes ist, zu dem ich gerade den Partner suche.
                                 int i = 0;
                                 if (dayListMap.get(duplicates.get(0).getDay()).get(duplicates.get(0).getLesson() - 1).getCourses().indexOf(duplicates.get(0)) == 0){
                                     i = 1;
@@ -140,6 +157,7 @@ public class JahresStundenPlan extends Plan {
         return finished;
     }
 
+    //Läd von einem String, wann das letzte Update dieses Stundenplans online war
     @Override
     public Date getUpdateDate(String s) {
         JSONArray array = new JSONArray(s);
@@ -153,12 +171,16 @@ public class JahresStundenPlan extends Plan {
             return new Date();
         }
     }
+
+    //Um Daten runterladen zu können, brauche ich einen Token. Hier extrahiere ich diesen aus einem JSON STring
     @Override
     public String loadToken(String s){
         JSONArray array = new JSONArray(s);
         JSONObject object = (JSONObject) array.get(1);
         return (String) object.get("Id");
     }
+
+    //Hier wird geladen, in welcher Woche sich der Allgemeine Plan befindet(er wird nicht jede Woche geeupdated und ich brauche die Woche, um Daten laden zu können)
     @Override
     public int getWeek(){
         try {

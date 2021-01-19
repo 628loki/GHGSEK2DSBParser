@@ -9,14 +9,22 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class GHGParser {
 
+    //Eine Liste von Nutzer-Profilen
     private static ArrayList<User> users;
+    //Eine HTML-Datei, welche Platzhalter hat zum einfachen einsetzen der Stunden
     private static String rawHtml;
+    //Der Jahrestundenplan der 11
     private static JahresStundenPlan jahresStundenPlan11;
+    //Der Jahrestundenplan der 12
     private static JahresStundenPlan jahresStundenPlan12;
+    //Der Ordner, in dem alles gespeichert werden soll
     private static File basedir;
+    //Eine Mapping Tabelle, zum anpassen des Plan-HTMLs, welches runtergeladen wird, auf einen Standard(für die 11.)
     private static HashMap<String, String> toReplace11 = new HashMap<>();
+    //Eine Mapping Tabelle, zum anpassen des Plan-HTMLs, welches runtergeladen wird, auf einen Standard(für die 12.)
     private static HashMap<String, String> toReplace12 = new HashMap<>();
 
+    //Die init Methode, welche alles nötige initalisiert(Die Profile, Mappings etc.)
     public static void init(InputStream rawHtmlStream, File basedir) throws IOException, DSBNotLoadableException {
         setBasedir(basedir);
 
@@ -35,6 +43,8 @@ public class GHGParser {
         setJahresStundenPlan(new JahresStundenPlan(12));
     }
 
+    //Eine Methode, welche eine List von bereis gewählten Kursen als Input krigt und dann alle möglichen Kurse und zurück gibt,
+    //welche Kurse noch wählbar sind. Eigentlich wird sie nicht mehr genutzt, wie mir gerade beim schreiben auffällt, weshalb ich sie ausbauen könnte...
     public static ArrayList<CoreCourse> remainingCoreCourses(ArrayList<CoreCourse> choosen, ArrayList<CoreCourse> remaining){
         ArrayList<String> blockedCourses = new ArrayList<>();
         ArrayList<String> blockedNames = new ArrayList<>();
@@ -64,22 +74,32 @@ public class GHGParser {
         return generateHtmlFile(user, new Plan(user.getYear(), week));
     }
 
+    //Die Funktion generiert die fertige HTML-Datei.
     public static String generateHtmlFile(User user, Plan plan) throws DSBNotLoadableException {
         AtomicReference<String> rawHtmlReference = new AtomicReference<>();
         rawHtmlReference.set(rawHtml);
 
+        //bringt den runtergeladenen Plan in eine Standard-Form
         plan.normalize();
+        //Maskiert alle Kurse weg, die nicht vom Nutzer belegt wurden
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
+        //Ein HTML-String, damit ich leichter etwas durchstreichen kann. "con" ist der Platzhalter von dem, was durchgetrichen werden soll
         String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
+        //Über alle belegten Kurse in ihrem momentanen Zustand rüberiterieren(Zwei Lambdas(man sieht es schlecht))
         masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
+            //Ein Kurs kann z.B. 2 Stunden lan gehen. Jede Stunde muss aber eingetragen werden. Deshalb wird der Kurs so lange untereinander
+            //eingetragen, wie er lang ist
             for (int i = 0; i < course.getLength(); i++) {
                 String room = course.getRoom();
                 String name = course.getCourseName();
                 String teacher = course.getTeacher();
+                //Wenn der Kurs ausfällt, ihn durchgestrichen anzeigen
                 if (course.isCancelled()){
                     room = strikes.replace("con", room);
                     name = strikes.replace("con", name);
                     teacher = strikes.replace("con", teacher);
+                    //Das soll irgendwie erkennen, ob sich ein Raum geändert hat, ich kann dir aber beim besten willen nicht mehr sagen,
+                    //warum das so kompliziert sein musste... Vllt. fällt es mir ja wieder ein.
                 }else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
                         && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
                         .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
@@ -87,6 +107,8 @@ public class GHGParser {
                         && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
                     room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
                 }
+                //Die Platzhalter sind "MO1R" für Montag 1 Stunde Raum aufgebaut. da wird das einfach ersetzt.
+                //Dieses AtomicReference Zeug ist vermutlich ziemlich unnötig und ich sollte das anders lösen(kein Lambda z.B.)
                 rawHtmlReference.set(rawHtmlReference.get()
                         .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
                         .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
@@ -100,6 +122,7 @@ public class GHGParser {
         return year == 12 ? toReplace12 : toReplace11;
     }
 
+    //Das lesen der Mappings
     private static void readMappings(){
         new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings11.txt")))
                 .lines().forEach(s -> {
@@ -115,6 +138,7 @@ public class GHGParser {
 
     }
 
+    //Ist nur eine Test-Mainmethode. Kannst du ignorieren.
     public static void main(String[] args) throws IOException, DSBNotLoadableException {
         try {
             Class.forName("de.berstanio.ghgparser.Logger");

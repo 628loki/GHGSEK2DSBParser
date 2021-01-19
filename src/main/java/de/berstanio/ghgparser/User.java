@@ -9,10 +9,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
+//Ein Nutzerprofil
 public class User implements Serializable{
 
+    //Die Liste von gewählten Kursen
     private ArrayList<CoreCourse> coreCourses = new ArrayList<>();
+    //Für welches Jahr das Profil gilt.
     private int year;
     public static final long serialVersionUID = -2636346567614007956L;
 
@@ -25,6 +27,7 @@ public class User implements Serializable{
     public HashMap<DayOfWeek, LinkedList<Course>> maskPlan(HashMap<DayOfWeek, LinkedList<Block>> dayListMap){
         HashMap<DayOfWeek, LinkedList<Course>> newMap = new HashMap<>();
 
+        //Erstmal die Map mit leeren Kursen auffüllen
         newMap.put(DayOfWeek.MONDAY, new LinkedList<>(IntStream.rangeClosed(1, 8).mapToObj(value -> {
                                                         Course course = new Course();
                                                         course.setLength(1);
@@ -76,6 +79,9 @@ public class User implements Serializable{
                                                         return course;
                                                     }).collect(Collectors.toList())));
 
+        //Geht über alle gewählten Kurse rüber und fügt den aktuellenb Stand(das übergebene) in die Map ein
+        //Falls er den Kurs in der übergebenen Liste nicht findet, deutet das auf eine Jahrgangsaktivität hin und Infos zu der wären im 1. Element von BLock
+        //Deshalb fügt er dann das hinzu
         getCoreCourses().forEach(coreCourse -> {
             coreCourse.getCourses().forEach(course -> {
                 Block block = dayListMap.get(course.getDay()).get(course.getLesson() - 1);
@@ -94,11 +100,13 @@ public class User implements Serializable{
         return newMap;
     }
 
+    //Läd User-Daten
     public static ArrayList<User> loadUsers(){
         File dir = GHGParser.getBasedir();
         ArrayList<User> users = new ArrayList<>();
         if (dir.listFiles() != null) {
             if (dir.listFiles().length == 0) return users;
+            //Nimmt alle files, welche kein "plan" enthalten, da das User-Files sind
             Arrays.stream(dir.listFiles()).filter(File::isFile).filter(file -> !file.getName().contains("plan") && !file.getName().equals("year.yml")).forEach(file1 -> {
                 try {
                     ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file1));
@@ -116,6 +124,7 @@ public class User implements Serializable{
         return users;
     }
 
+    //User löschen
     public void deleteUser(){
         File dir = GHGParser.getBasedir();
         File file = new File(dir.getAbsolutePath() + "/" + hashCode() + ".yml");
@@ -123,6 +132,7 @@ public class User implements Serializable{
         GHGParser.getUsers().remove(this);
     }
 
+    //Der Dateiname ist der HashCode des Users. Ist das eine schlechte Idee?
     public void saveUser(){
         try {
             File dir = GHGParser.getBasedir();
