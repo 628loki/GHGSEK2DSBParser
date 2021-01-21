@@ -51,31 +51,18 @@ public class Plan implements Serializable {
         //Falls der Plan das erste mal geladen wird und es keine Kopie auf der Festplatte gibt, lade ihn runter
         if (getDayListMap() == null) {
             if (!loadPlan()) {
-                String s = download();
-                if (s.isEmpty()) return;
-                setDayListMap(parse(s));
-                setLastUpdate(update);
-                //Und speicher ihn direkt
-                savePlan();
+                getNewData(update);
                 return;
             }
         }
         //Falls das Datum des Plans älter als das aktuelle Update-Datum ist, mache ein update
         if (getLastUpdate() != null && update.after(getLastUpdate())){
-            String s = download();
-            if (s.isEmpty()) return;
-            setDayListMap(parse(s));
-            setLastUpdate(update);
-            savePlan();
+            getNewData(update);
             return;
         }
         //Falls aus irgendeinem Grund die Datums-Daten weg sind, mache ein update
         if (getLastUpdate() == null){
-            String s = download();
-            if (s.isEmpty()) return;
-            setDayListMap(parse(s));
-            setLastUpdate(update);
-            savePlan();
+            getNewData(update);
             return;
         }
         //Speicher Sicherhaltshalber alles, auch wenn es nicht nötig sein sollte
@@ -83,12 +70,21 @@ public class Plan implements Serializable {
         savePlan();
     }
 
+
+    public void getNewData(Date update) throws IOException {
+        String s = download();
+        if (s.isEmpty()) return;
+        setDayListMap(parse(s));
+        setLastUpdate(update);
+        savePlan();
+    }
+
     //Das Parsen des geladenen HTMLs in eine Datenstruktur
     //Der Algorithmus und die Struktur des HTMLs ist etwas schwerer zu erklären, weshalb ich noch schaue, wie ich das am besten mache
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
-        AtomicReference<String> replacedString = new AtomicReference<>(s);
-        GHGParser.getMappings(getYear()).forEach((toReplace, replacement) -> replacedString.set(replacedString.get().replaceAll(toReplace, replacement)));
-        s = replacedString.get();
+        for (Map.Entry<String, String> entry : GHGParser.getMappings(getYear()).entrySet()) {
+            s = s.replaceAll(entry.getKey(), entry.getValue());
+        }
 
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = new HashMap<>();
         dayListMap.put(DayOfWeek.MONDAY, new LinkedList<>());
@@ -99,9 +95,7 @@ public class Plan implements Serializable {
 
         Document document = Jsoup.parse(s);
 
-        Elements tables = document.getElementsByAttributeValue("rules", "all");
-        Element table = tables.get(0);
-        Elements columnsLessons =  table.child(0).children();
+        Elements columnsLessons =  document.getElementsByAttributeValue("rules", "all").get(0).child(0).children();
 
         HashMap<Integer, Uebertrag> uebertragMap = new HashMap<>();
 
@@ -163,7 +157,6 @@ public class Plan implements Serializable {
                                 } else if (part.size() == 1) {
                                     if (part.get(0).text().chars().allMatch(Character::isDigit)) continue;
                                     course.setCourseName(part.get(0).text());
-                                    //System.out.println(course.getCourseName());
                                     course.setTeacher("");
                                     course.setRoom("");
                                     block.getCourses().add(course);
@@ -201,8 +194,6 @@ public class Plan implements Serializable {
                             colPos += Integer.parseInt(element.attr("colspan"));
                             System.out.println("(Elem) Aktuelle colPos: " + colPos);
                         }
-
-
                     } else {
                         System.out.println("Fehler!");
                         break;
@@ -216,11 +207,12 @@ public class Plan implements Serializable {
     //Den Plan weiter auf ein Standard-Format bringen, was mit den Mappings nicht möglich war
     public void normalize(){
         //Dämmlicher EInzellfall, bei einer Stunde fehlt der Raum. Das ist der Fix
+        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course -> course.getCourseName().equalsIgnoreCase("PADD"));
         getDayListMap().get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
-
             if ((course.getTeacher().isEmpty() && course.getRoom().equalsIgnoreCase("PADD"))){
                 course.setTeacher(course.getCourseName());
                 course.setCourseName(course.getRoom());
+                course.setLength(2);
                 course.setRoom("EXT");
             }
 
@@ -228,21 +220,19 @@ public class Plan implements Serializable {
                 course.setLength(2);
                 course.setRoom("EXT");
             }
+            if (course.getCourseName().equalsIgnoreCase("PADD")){
+                getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().add(course);
+
+            }
         });
-        //Gehört auch zum Fix, ist aber glaube ich dämmlich gelößt. Werde ich bei Gelegenheit überarbeiten
-        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
-        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().addAll(dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().stream().filter(course -> course.getCourseName().equalsIgnoreCase("PADD")).collect(Collectors.toList()));
+
         //Alle leeren Stunden entfernen und doppel STunden entfernen(unterschiedliche Lehrer/gleicher Raum)
         getDayListMap().forEach((dayOfWeek, blocks) -> blocks.removeIf(block -> {
             ArrayList<Course> alreadyRemoved = new ArrayList<>();
             block.getCourses().removeIf(course -> {
-                //Fixt, dass bei manchen ein Raum mit Punkt am Ende eingetragen ist
-                if (course.getRoom().contains(".")){
-                    course.setRoom(course.getRoom().replace(".",""));
-                }
                 if (!alreadyRemoved.contains(course)) {
                     for (Course courseDup : block.getCourses()) {
-                        //Fixt, dass bei manchen ein Raum mit Punkt am Ende eingetragen ist(die loop kann weiter sein)
+                        //Fixt, dass bei manchen ein Raum mit Punkt am Ende eingetragen ist
                         if (courseDup.getRoom().contains(".")){
                             courseDup.setRoom(courseDup.getRoom().replace(".",""));
                         }
@@ -255,19 +245,18 @@ public class Plan implements Serializable {
                                     alreadyRemoved.add(courseDup);
                                     if (!courseDup.getTeacher().contains("/")){
                                         courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
-
                                     }
-                                    return true;
                                 }
                             }
                         }
                     }
-                }
+                    //Wenn Kurse leer sind, entfernen
+                    return course.getCourseName().isEmpty();
+                });
                 //Wenn Kurse leer sind, entfernen
-                return course.getCourseName().isEmpty();
+                return block.getCourses().isEmpty();
             });
-            return block.getCourses().isEmpty();
-        }));
+        });
     }
 
     //Serializierd und speichert den Plan

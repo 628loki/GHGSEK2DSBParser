@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class GHGParser {
 
@@ -75,47 +74,46 @@ public class GHGParser {
     }
 
     //Die Funktion generiert die fertige HTML-Datei.
-    public static String generateHtmlFile(User user, Plan plan) throws DSBNotLoadableException {
-        AtomicReference<String> rawHtmlReference = new AtomicReference<>();
-        rawHtmlReference.set(rawHtml);
-
+    public static String generateHtmlFile(User user, Plan plan) {
+        String html = getRawHtml();
         //bringt den runtergeladenen Plan in eine Standard-Form
         plan.normalize();
         //Maskiert alle Kurse weg, die nicht vom Nutzer belegt wurden
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
         //Ein HTML-String, damit ich leichter etwas durchstreichen kann. "con" ist der Platzhalter von dem, was durchgetrichen werden soll
         String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
-        //Über alle belegten Kurse in ihrem momentanen Zustand rüberiterieren(Zwei Lambdas(man sieht es schlecht))
-        masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
-            //Ein Kurs kann z.B. 2 Stunden lan gehen. Jede Stunde muss aber eingetragen werden. Deshalb wird der Kurs so lange untereinander
-            //eingetragen, wie er lang ist
-            for (int i = 0; i < course.getLength(); i++) {
-                String room = course.getRoom();
-                String name = course.getCourseName();
-                String teacher = course.getTeacher();
-                //Wenn der Kurs ausfällt, ihn durchgestrichen anzeigen
-                if (course.isCancelled()){
-                    room = strikes.replace("con", room);
-                    name = strikes.replace("con", name);
-                    teacher = strikes.replace("con", teacher);
-                    //Das soll irgendwie erkennen, ob sich ein Raum geändert hat, ich kann dir aber beim besten willen nicht mehr sagen,
-                    //warum das so kompliziert sein musste... Vllt. fällt es mir ja wieder ein.
-                }else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
-                        && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
-                        .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
-                        && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
-                        && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
-                    room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+      //Über alle belegten Kurse in ihrem momentanen Zustand rüberiterieren(Zwei Lambdas(man sieht es schlecht))
+        for (LinkedList<Course> courses : masked.values()) {
+            for (Course course : courses) {
+                for (int i = 0; i < course.getLength(); i++) {
+                    //Ein Kurs kann z.B. 2 Stunden lan gehen. Jede Stunde muss aber eingetragen werden. Deshalb wird der Kurs so lange untereinander
+                    //eingetragen, wie er lang ist
+                    String room = course.getRoom();
+                    String name = course.getCourseName();
+                    String teacher = course.getTeacher();
+                    if (course.getCourseName().isEmpty() && course.getTeacher().isEmpty() && course.getRoom().isEmpty()){
+
+                    }else if (course.isCancelled()) {
+                        //Wenn der Kurs ausfällt, ihn durchgestrichen anzeigen
+                        room = strikes.replace("con", room);
+                        name = strikes.replace("con", name);
+                        teacher = strikes.replace("con", teacher);
+                      //Wenn es im aktuellen Plan eine Stunde gibt, die den gleichen Lehrer und den gleichen Kursnamen hat, aber unterschiedlichen Raum als im Jahresstundenplan
+                      //Dann ist es eine Raumänderung
+                    } else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
+                            .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                                    && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                                    && !comp.getRoom().equalsIgnoreCase(course.getRoom()))) {
+                        room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+                    }
+                    //Die Platzhalter sind "MO1R" für Montag 1 Stunde Raum aufgebaut. da wird das einfach ersetzt.
+                    html = html.replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher);
                 }
-                //Die Platzhalter sind "MO1R" für Montag 1 Stunde Raum aufgebaut. da wird das einfach ersetzt.
-                //Dieses AtomicReference Zeug ist vermutlich ziemlich unnötig und ich sollte das anders lösen(kein Lambda z.B.)
-                rawHtmlReference.set(rawHtmlReference.get()
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher));
             }
-        }));
-        return rawHtmlReference.get();
+        }
+        return html;
     }
 
     public static HashMap<String, String> getMappings(int year){
@@ -189,8 +187,6 @@ public class GHGParser {
             e.printStackTrace();
         }
         try {
-            // TODO: 27.11.2020 Schwimmen falsch erkannt
-            //setYear(11);
             User user = users.get(0);
             List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
             String rawHtml = String.join("", rawHtmlList);

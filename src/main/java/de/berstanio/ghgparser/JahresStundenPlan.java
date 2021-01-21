@@ -35,7 +35,7 @@ public class JahresStundenPlan extends Plan {
         //Die Struktur des HTMLs mit den Stundenplan unterscheidet scih ein wenig. Bei dem einen kommt "Raum", "Fach","Lehrer"
         //bei dem anderen lehrer, Fach, Raum. Deshalb müssen Lehrer und Raum hier getauscht werden
         ArrayList<Course> alreadySwapped = new ArrayList<>();
-        dayListMap.forEach((dayOfWeek, blocks) -> {
+        dayListMap.values().forEach(blocks -> {
             blocks.forEach(block -> {
                 block.getCourses().removeIf(course -> {
                     if (!alreadySwapped.contains(course)){
@@ -94,61 +94,48 @@ public class JahresStundenPlan extends Plan {
                         });
                         continue;
                     }
-                    //Eigentlich sollte fast immer der duplicates.size() == 3 ausgeführt werden...
-                    //Die Außnahme ist halt, wenn die size ein vielfaches von 2 ist und != 2. Das heißt dann, dass ein Lehrer
-                    //im Grundkurs ein Fach mehrmals hat(also z.B. zwei MatheGKs beim gleichen Lehrer)
-                    if (duplicates.size() == 3) {
-                        CoreCourse coreCourse = new CoreCourse();
-                        coreCourse.setCourseName(course.getCourseName());
-                        coreCourse.setTeacher(course.getTeacher());
-                        coreCourse.getCourses().addAll(duplicates);
-                        finished.add(coreCourse);
-                    } else if (duplicates.size() % 2 == 0) {
-                        if (duplicates.size() == 2) {
-                            CoreCourse coreCourse = new CoreCourse();
-                            coreCourse.setCourseName(course.getCourseName());
-                            coreCourse.setTeacher(course.getTeacher());
-                            coreCourse.getCourses().addAll(duplicates);
-                            finished.add(coreCourse);
-                        } else {
-                            while (duplicates.size() != 0) {
-                                CoreCourse coreCourse = new CoreCourse();
-                                coreCourse.setCourseName(course.getCourseName());
-                                coreCourse.setTeacher(course.getTeacher());
-                                Course firstOrSecond;
-                                //Um die verschiedenen Kurse zu unterschieden muss man schauen, was für Kurse sonst noch gleichzeitig laufen
-                                //Also der eine gkMa hat immer mit dem gleichen gkPhy Unterricht
-                                //Deshalb schaue ich mir den 1. oder 2. gleichzeitig laufenden Kurs an und vergleiche das dann.
-                                //(den 2. nehme ich, falls) der Kurs als erstes ist, zu dem ich gerade den Partner suche.
-                                int i = 0;
-                                if (dayListMap.get(duplicates.get(0).getDay()).get(duplicates.get(0).getLesson() - 1).getCourses().indexOf(duplicates.get(0)) == 0){
-                                    i = 1;
-                                }
-                                firstOrSecond = dayListMap.get(duplicates.get(0).getDay()).get(duplicates.get(0).getLesson() - 1).getCourses().get(i);
-                                for (Course check : duplicates) {
-                                    if (check.equals(duplicates.get(0))) continue;
-                                    Course tmp = dayListMap.get(check.getDay()).get(check.getLesson() - 1).getCourses().get(i);
 
-                                    if (tmp.getCourseName().equals(firstOrSecond.getCourseName())) {
-                                        if (tmp.getTeacher().equals(firstOrSecond.getTeacher())) {
-                                            coreCourse.getCourses().add(duplicates.get(0));
-                                            coreCourse.getCourses().add(check);
-                                            finished.add(coreCourse);
-                                            break;
-                                        }
-                                    }
-
-                                }
-                                duplicates.removeAll(coreCourse.getCourses());
-                            }
-                        }
-                    } else if (duplicates.size() == 1) {
+                    if (!(duplicates.size() % 2 == 0 && duplicates.size() >= 4)) {
                         if (!course.getTeacher().isEmpty()) {
                             CoreCourse coreCourse = new CoreCourse();
                             coreCourse.setCourseName(course.getCourseName());
                             coreCourse.setTeacher(course.getTeacher());
                             coreCourse.getCourses().addAll(duplicates);
                             finished.add(coreCourse);
+                    } else {
+                        while (duplicates.size() != 0) {
+                            CoreCourse coreCourse = new CoreCourse();
+                            coreCourse.setCourseName(course.getCourseName());
+                            coreCourse.setTeacher(course.getTeacher());
+                            Course firstOrSecond;
+                            Course base = duplicates.get(0);
+                            Block baseBlock = dayListMap.get(base.getDay()).get(base.getLesson() - 1);
+                            //Um die verschiedenen Kurse zu unterschieden muss man schauen, was für Kurse sonst noch gleichzeitig laufen
+                            //Also der eine gkMa hat immer mit dem gleichen gkPhy Unterricht
+                            //Deshalb schaue ich mir den 1. oder 2. gleichzeitig laufenden Kurs an und vergleiche das dann.
+                            //(den 2. nehme ich, falls) der Kurs als erstes ist, zu dem ich gerade den Partner suche.                                
+                            //Also der eine gkMa hat immer mit dem gleichen gkPhy Unterricht
+                            //Deshalb schaue ich mir den 1. oder 2. gleichzeitig laufenden Kurs an und vergleiche das dann.
+                            //(den 2. nehme ich, falls) der Kurs als erstes ist, zu dem ich gerade den Partner suche.
+                            int i = 0;
+                            if (baseBlock.getCourses().indexOf(base) == 0){
+                                i = 1;
+                            }
+                            firstOrSecond = baseBlock.getCourses().get(i);
+                            for (Course check : duplicates) {
+                                if (check.equals(base)) continue;
+                                Course tmp = dayListMap.get(check.getDay()).get(check.getLesson() - 1).getCourses().get(i);
+                                if (tmp.getCourseName().equals(firstOrSecond.getCourseName())) {
+                                    if (tmp.getTeacher().equals(firstOrSecond.getTeacher())) {
+                                        coreCourse.getCourses().add(base);
+                                        coreCourse.getCourses().add(check);
+                                        finished.add(coreCourse);
+                                        break;
+                                    }
+                                }
+
+                            }
+                            duplicates.removeAll(coreCourse.getCourses());
                         }
                     }
                 }
