@@ -4,8 +4,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -177,15 +178,12 @@ public class JahresStundenPlan extends Plan {
 
             urlConnection.connect();
 
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
-            char c;
-            StringBuilder stringBuilder = new StringBuilder();
-            while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
-                stringBuilder.append(c);
-            }
-            stringBuilder.delete(0, stringBuilder.indexOf("weeks: ") + 15);
-            stringBuilder.delete(2, stringBuilder.length());
-            return Integer.parseInt(stringBuilder.toString());
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+            String s =  bufferedReader.lines().collect(Collectors.joining());
+
+            int i = s.indexOf("weeks: ") + 13;
+            s = s.substring(i, i + 2);
+            return Integer.parseInt(s);
         }catch (IOException e){
             e.printStackTrace();
             return 0;

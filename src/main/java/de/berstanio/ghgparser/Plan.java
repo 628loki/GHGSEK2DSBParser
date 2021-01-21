@@ -51,30 +51,33 @@ public class Plan implements Serializable {
         //Falls der Plan das erste mal geladen wird und es keine Kopie auf der Festplatte gibt, lade ihn runter
         if (getDayListMap() == null) {
             if (!loadPlan()) {
-                getNewData(update);
+                String s = download();
+                if (s.isEmpty()) return;
+                setDayListMap(parse(s));
+                setLastUpdate(update);
+                savePlan();
                 return;
             }
         }
         //Falls das Datum des Plans älter als das aktuelle Update-Datum ist, mache ein update
         if (getLastUpdate() != null && update.after(getLastUpdate())){
-            getNewData(update);
+            String s = download();
+            if (s.isEmpty()) return;
+            setDayListMap(parse(s));
+            setLastUpdate(update);
+            savePlan();
             return;
         }
         //Falls aus irgendeinem Grund die Datums-Daten weg sind, mache ein update
         if (getLastUpdate() == null){
-            getNewData(update);
+            String s = download();
+            if (s.isEmpty()) return;
+            setDayListMap(parse(s));
+            setLastUpdate(update);
+            savePlan();
             return;
         }
         //Speicher Sicherhaltshalber alles, auch wenn es nicht nötig sein sollte
-        setLastUpdate(update);
-        savePlan();
-    }
-
-
-    public void getNewData(Date update) throws IOException {
-        String s = download();
-        if (s.isEmpty()) return;
-        setDayListMap(parse(s));
         setLastUpdate(update);
         savePlan();
     }
@@ -304,13 +307,8 @@ public class Plan implements Serializable {
 
         urlConnection.connect();
 
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
-        char c;
-        StringBuilder stringBuilder = new StringBuilder();
-        while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
-            stringBuilder.append(c);
-        }
-        return stringBuilder.toString();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+        return bufferedReader.lines().collect(Collectors.joining());
     }
 
     //Den JSON-String holen, mit allen möglichen Infos z.B. token, lastupdate
@@ -320,13 +318,8 @@ public class Plan implements Serializable {
 
         urlConnection.connect();
 
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(urlConnection.getInputStream());
-        char c;
-        StringBuilder stringBuilder = new StringBuilder();
-        while (((int) (c = (char) bufferedInputStream.read())) != 65535) {
-            stringBuilder.append(c);
-        }
-        return stringBuilder.toString();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+        return bufferedReader.lines().collect(Collectors.joining());
     }
 
     //Aus dem JSON String lesen, wann das letzte update war
