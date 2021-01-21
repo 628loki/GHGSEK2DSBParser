@@ -99,7 +99,7 @@ public class User implements Serializable{
         ArrayList<User> users = new ArrayList<>();
         if (dir.listFiles() != null) {
             if (dir.listFiles().length == 0) return users;
-            Arrays.stream(dir.listFiles()).filter(File::isFile).filter(file -> !file.getName().contains("plan") && !file.getName().equals("year.yml")).forEach(file1 -> {
+            Arrays.stream(dir.listFiles()).filter(File::isFile).filter(file -> !file.getName().contains("plan")).forEach(file1 -> {
                 try {
                     ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(file1));
                     User user = (User) objectInputStream.readObject();

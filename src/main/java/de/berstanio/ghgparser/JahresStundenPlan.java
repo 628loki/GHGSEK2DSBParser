@@ -29,7 +29,7 @@ public class JahresStundenPlan extends Plan {
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = getDayListMap();
 
         ArrayList<Course> alreadySwapped = new ArrayList<>();
-        dayListMap.forEach((dayOfWeek, blocks) -> {
+        dayListMap.values().forEach(blocks -> {
             blocks.forEach(block -> {
                 block.getCourses().removeIf(course -> {
                     if (!alreadySwapped.contains(course)){
@@ -84,54 +84,41 @@ public class JahresStundenPlan extends Plan {
                         continue;
                     }
 
-                    if (duplicates.size() == 3) {
-                        CoreCourse coreCourse = new CoreCourse();
-                        coreCourse.setCourseName(course.getCourseName());
-                        coreCourse.setTeacher(course.getTeacher());
-                        coreCourse.getCourses().addAll(duplicates);
-                        finished.add(coreCourse);
-                    } else if (duplicates.size() % 2 == 0) {
-                        if (duplicates.size() == 2) {
-                            CoreCourse coreCourse = new CoreCourse();
-                            coreCourse.setCourseName(course.getCourseName());
-                            coreCourse.setTeacher(course.getTeacher());
-                            coreCourse.getCourses().addAll(duplicates);
-                            finished.add(coreCourse);
-                        } else {
-                            while (duplicates.size() != 0) {
-                                CoreCourse coreCourse = new CoreCourse();
-                                coreCourse.setCourseName(course.getCourseName());
-                                coreCourse.setTeacher(course.getTeacher());
-                                Course firstOrSecond;
-                                int i = 0;
-                                if (dayListMap.get(duplicates.get(0).getDay()).get(duplicates.get(0).getLesson() - 1).getCourses().indexOf(duplicates.get(0)) == 0){
-                                    i = 1;
-                                }
-                                firstOrSecond = dayListMap.get(duplicates.get(0).getDay()).get(duplicates.get(0).getLesson() - 1).getCourses().get(i);
-                                for (Course check : duplicates) {
-                                    if (check.equals(duplicates.get(0))) continue;
-                                    Course tmp = dayListMap.get(check.getDay()).get(check.getLesson() - 1).getCourses().get(i);
-
-                                    if (tmp.getCourseName().equals(firstOrSecond.getCourseName())) {
-                                        if (tmp.getTeacher().equals(firstOrSecond.getTeacher())) {
-                                            coreCourse.getCourses().add(duplicates.get(0));
-                                            coreCourse.getCourses().add(check);
-                                            finished.add(coreCourse);
-                                            break;
-                                        }
-                                    }
-
-                                }
-                                duplicates.removeAll(coreCourse.getCourses());
-                            }
-                        }
-                    } else if (duplicates.size() == 1) {
+                    if (!(duplicates.size() % 2 == 0 && duplicates.size() >= 4)) {
                         if (!course.getTeacher().isEmpty()) {
                             CoreCourse coreCourse = new CoreCourse();
                             coreCourse.setCourseName(course.getCourseName());
                             coreCourse.setTeacher(course.getTeacher());
                             coreCourse.getCourses().addAll(duplicates);
                             finished.add(coreCourse);
+                        }
+                    } else {
+                        while (duplicates.size() != 0) {
+                            CoreCourse coreCourse = new CoreCourse();
+                            coreCourse.setCourseName(course.getCourseName());
+                            coreCourse.setTeacher(course.getTeacher());
+                            Course firstOrSecond;
+                            Course base = duplicates.get(0);
+                            Block baseBlock = dayListMap.get(base.getDay()).get(base.getLesson() - 1);
+                            int i = 0;
+                            if (baseBlock.getCourses().indexOf(base) == 0){
+                                i = 1;
+                            }
+                            firstOrSecond = baseBlock.getCourses().get(i);
+                            for (Course check : duplicates) {
+                                if (check.equals(base)) continue;
+                                Course tmp = dayListMap.get(check.getDay()).get(check.getLesson() - 1).getCourses().get(i);
+                                if (tmp.getCourseName().equals(firstOrSecond.getCourseName())) {
+                                    if (tmp.getTeacher().equals(firstOrSecond.getTeacher())) {
+                                        coreCourse.getCourses().add(base);
+                                        coreCourse.getCourses().add(check);
+                                        finished.add(coreCourse);
+                                        break;
+                                    }
+                                }
+
+                            }
+                            duplicates.removeAll(coreCourse.getCourses());
                         }
                     }
                 }

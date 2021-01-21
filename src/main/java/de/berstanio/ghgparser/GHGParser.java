@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class GHGParser {
 
@@ -64,36 +63,37 @@ public class GHGParser {
         return generateHtmlFile(user, new Plan(user.getYear(), week));
     }
 
-    public static String generateHtmlFile(User user, Plan plan) throws DSBNotLoadableException {
-        AtomicReference<String> rawHtmlReference = new AtomicReference<>();
-        rawHtmlReference.set(rawHtml);
+    public static String generateHtmlFile(User user, Plan plan) {
+        String html = getRawHtml();
 
         plan.normalize();
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
         String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
-        masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
-            for (int i = 0; i < course.getLength(); i++) {
-                String room = course.getRoom();
-                String name = course.getCourseName();
-                String teacher = course.getTeacher();
-                if (course.isCancelled()){
-                    room = strikes.replace("con", room);
-                    name = strikes.replace("con", name);
-                    teacher = strikes.replace("con", teacher);
-                }else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
-                        && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
-                        .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
-                        && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
-                        && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
-                    room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+        for (LinkedList<Course> courses : masked.values()) {
+            for (Course course : courses) {
+                for (int i = 0; i < course.getLength(); i++) {
+                    String room = course.getRoom();
+                    String name = course.getCourseName();
+                    String teacher = course.getTeacher();
+                    if (course.isCancelled()) {
+                        room = strikes.replace("con", room);
+                        name = strikes.replace("con", name);
+                        teacher = strikes.replace("con", teacher);
+                        // TODO: 20.01.2021 Checken, was das soll?
+                    } else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
+                            && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
+                            .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                                    && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                                    && !comp.getRoom().equalsIgnoreCase(course.getRoom()))) {
+                        room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+                    }
+                    html = html.replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher);
                 }
-                rawHtmlReference.set(rawHtmlReference.get()
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher));
             }
-        }));
-        return rawHtmlReference.get();
+        }
+        return html;
     }
 
     public static HashMap<String, String> getMappings(int year){

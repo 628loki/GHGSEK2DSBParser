@@ -44,36 +44,33 @@ public class Plan implements Serializable {
         Date update = getUpdateDate(jsonData);
         if (getDayListMap() == null) {
             if (!loadPlan()) {
-                String s = download();
-                if (s.isEmpty()) return;
-                setDayListMap(parse(s));
-                setLastUpdate(update);
-                savePlan();
+                getNewData(update);
                 return;
             }
         }
         if (getLastUpdate() != null && update.after(getLastUpdate())){
-            String s = download();
-            if (s.isEmpty()) return;
-            setDayListMap(parse(s));
-            setLastUpdate(update);
-            savePlan();
+            getNewData(update);
+            return;
         }
         if (getLastUpdate() == null){
-            String s = download();
-            if (s.isEmpty()) return;
-            setDayListMap(parse(s));
-            setLastUpdate(update);
-            savePlan();
+            getNewData(update);
         }
         setLastUpdate(update);
         savePlan();
     }
 
+    public void getNewData(Date update) throws IOException {
+        String s = download();
+        if (s.isEmpty()) return;
+        setDayListMap(parse(s));
+        setLastUpdate(update);
+        savePlan();
+    }
+
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
-        AtomicReference<String> replacedString = new AtomicReference<>(s);
-        GHGParser.getMappings(getYear()).forEach((toReplace, replacement) -> replacedString.set(replacedString.get().replaceAll(toReplace, replacement)));
-        s = replacedString.get();
+        for (Map.Entry<String, String> entry : GHGParser.getMappings(getYear()).entrySet()) {
+            s = s.replaceAll(entry.getKey(), entry.getValue());
+        }
 
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = new HashMap<>();
         dayListMap.put(DayOfWeek.MONDAY, new LinkedList<>());
@@ -84,9 +81,7 @@ public class Plan implements Serializable {
 
         Document document = Jsoup.parse(s);
 
-        Elements tables = document.getElementsByAttributeValue("rules", "all");
-        Element table = tables.get(0);
-        Elements columnsLessons =  table.child(0).children();
+        Elements columnsLessons =  document.getElementsByAttributeValue("rules", "all").get(0).child(0).children();
 
         HashMap<Integer, Uebertrag> uebertragMap = new HashMap<>();
 
@@ -148,7 +143,6 @@ public class Plan implements Serializable {
                                 } else if (part.size() == 1) {
                                     if (part.get(0).text().chars().allMatch(Character::isDigit)) continue;
                                     course.setCourseName(part.get(0).text());
-                                    //System.out.println(course.getCourseName());
                                     course.setTeacher("");
                                     course.setRoom("");
                                     block.getCourses().add(course);
@@ -186,8 +180,6 @@ public class Plan implements Serializable {
                             colPos += Integer.parseInt(element.attr("colspan"));
                             System.out.println("(Elem) Aktuelle colPos: " + colPos);
                         }
-
-
                     } else {
                         System.out.println("Fehler!");
                         break;
@@ -199,15 +191,18 @@ public class Plan implements Serializable {
     }
 
     public void normalize(){
-// TODO: 27.11.2020 Hier richtig einfügen.
-        //Normal: PADD = courseName; teacher = SHKE
-        //JahresStunden: CourseName = SHKE; teacher = PADD
-        //NAch Swap: CourseName = SHKE; Room = PADD
+        // TODO: 20.01.2021 Nochmal genauer anschauen, wie das funktionieren soll
+        for (Course course : getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses()) {
+            if (course.getCourseName().equalsIgnoreCase("PADD")){
+                getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().remove(course);
+                break;
+            }
+        }
         getDayListMap().get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
-
             if ((course.getTeacher().isEmpty() && course.getRoom().equalsIgnoreCase("PADD"))){
                 course.setTeacher(course.getCourseName());
                 course.setCourseName(course.getRoom());
+                course.setLength(2);
                 course.setRoom("EXT");
             }
 
@@ -215,40 +210,40 @@ public class Plan implements Serializable {
                 course.setLength(2);
                 course.setRoom("EXT");
             }
-        });
-        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course1 -> course1.getCourseName().equalsIgnoreCase("PADD"));
-        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().addAll(dayListMap.get(DayOfWeek.MONDAY).get(5).getCourses().stream().filter(course -> course.getCourseName().equalsIgnoreCase("PADD")).collect(Collectors.toList()));
-        //Alle leeren Stunden entfernen und doppel STunden entfernen(unterschiedliche Lehrer/gleicher Raum)
-        getDayListMap().forEach((dayOfWeek, blocks) -> blocks.removeIf(block -> {
-            ArrayList<Course> alreadyRemoved = new ArrayList<>();
-            block.getCourses().removeIf(course -> {
-                if (course.getRoom().contains(".")){
-                    course.setRoom(course.getRoom().replace(".",""));
-                }
-                if (!alreadyRemoved.contains(course)) {
-                    for (Course courseDup : block.getCourses()) {
-                        if (courseDup.getRoom().contains(".")){
-                            courseDup.setRoom(courseDup.getRoom().replace(".",""));
-                        }
-                        if (!courseDup.equals(course)) {
-                            if (courseDup.getCourseName().equalsIgnoreCase(course.getCourseName())) {
-                                if (courseDup.getRoom().contains(course.getRoom())) {
-                                    alreadyRemoved.add(course);
-                                    alreadyRemoved.add(courseDup);
-                                    if (!courseDup.getTeacher().contains("/")){
-                                        courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
+            if (course.getCourseName().equalsIgnoreCase("PADD")){
+                getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().add(course);
 
+            }
+        });
+        //Alle leeren Stunden entfernen und doppel STunden entfernen(unterschiedliche Lehrer/gleicher Raum)
+        getDayListMap().forEach((dayOfWeek, blocks) -> {
+            blocks.removeIf(block -> {
+                ArrayList<Course> alreadyRemoved = new ArrayList<>();
+                block.getCourses().removeIf(course -> {
+                    if (!alreadyRemoved.contains(course)) {
+                        for (Course courseDup : block.getCourses()) {
+                            if (courseDup.getRoom().contains(".")) {
+                                courseDup.setRoom(courseDup.getRoom().replace(".", ""));
+                            }
+                            if (!courseDup.equals(course)) {
+                                if (courseDup.getCourseName().equalsIgnoreCase(course.getCourseName())) {
+                                    if (courseDup.getRoom().contains(course.getRoom())) {
+                                        alreadyRemoved.add(course);
+                                        alreadyRemoved.add(courseDup);
+                                        if (!courseDup.getTeacher().contains("/")) {
+                                            courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
+                                        }
+                                        return true;
                                     }
-                                    return true;
                                 }
                             }
                         }
                     }
-                }
-                return course.getCourseName().isEmpty();
+                    return course.getCourseName().isEmpty();
+                });
+                return block.getCourses().isEmpty();
             });
-            return block.getCourses().isEmpty();
-        }));
+        });
     }
 
     public void savePlan(){
