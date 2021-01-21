@@ -102,6 +102,7 @@ public class JahresStundenPlan extends Plan {
                             coreCourse.setTeacher(course.getTeacher());
                             coreCourse.getCourses().addAll(duplicates);
                             finished.add(coreCourse);
+                        }
                     } else {
                         while (duplicates.size() != 0) {
                             CoreCourse coreCourse = new CoreCourse();
