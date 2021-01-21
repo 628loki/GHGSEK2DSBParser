@@ -75,13 +75,13 @@ public class GHGParser {
                     String room = course.getRoom();
                     String name = course.getCourseName();
                     String teacher = course.getTeacher();
-                    if (course.isCancelled()) {
+                    if (course.getCourseName().isEmpty() && course.getTeacher().isEmpty() && course.getRoom().isEmpty()){
+
+                    }else if (course.isCancelled()) {
                         room = strikes.replace("con", room);
                         name = strikes.replace("con", name);
                         teacher = strikes.replace("con", teacher);
-                        // TODO: 20.01.2021 Checken, was das soll?
-                    } else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
-                            && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
+                    } else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
                             .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
                                     && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
                                     && !comp.getRoom().equalsIgnoreCase(course.getRoom()))) {
@@ -165,8 +165,6 @@ public class GHGParser {
             e.printStackTrace();
         }
         try {
-            // TODO: 27.11.2020 Schwimmen falsch erkannt
-            //setYear(11);
             User user = users.get(0);
             List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
             String rawHtml = String.join("", rawHtmlList);

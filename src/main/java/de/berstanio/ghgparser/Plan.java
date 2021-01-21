@@ -191,13 +191,8 @@ public class Plan implements Serializable {
     }
 
     public void normalize(){
-        // TODO: 20.01.2021 Nochmal genauer anschauen, wie das funktionieren soll
-        for (Course course : getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses()) {
-            if (course.getCourseName().equalsIgnoreCase("PADD")){
-                getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().remove(course);
-                break;
-            }
-        }
+        getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course -> course.getCourseName().equalsIgnoreCase("PADD"));
+
         getDayListMap().get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
             if ((course.getTeacher().isEmpty() && course.getRoom().equalsIgnoreCase("PADD"))){
                 course.setTeacher(course.getCourseName());
