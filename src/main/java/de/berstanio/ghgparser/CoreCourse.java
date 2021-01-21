@@ -3,10 +3,12 @@ package de.berstanio.ghgparser;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+//Representiert eine wählbaren Kurs.
 public class CoreCourse implements Serializable {
 
     private String courseName;
     private String teacher;
+    //Liste aller Stunden, die zum Kurs gehören
     private ArrayList<Course> courses = new ArrayList<>();
     public static final long serialVersionUID = -5565522753007317790L;
 

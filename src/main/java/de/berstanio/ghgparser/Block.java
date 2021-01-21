@@ -3,11 +3,14 @@ package de.berstanio.ghgparser;
 import java.io.Serializable;
 import java.util.LinkedList;
 
+//Representiert einen Stundenblock, mit allen Stunden die er enthält.
 public class Block implements Serializable {
 
     private static final long serialVersionUID = -7231586899183399277L;
     private DayOfWeek day;
+    //Die Stunde des Blocks
     private int blockNr;
+    //Liste aller Stunden, die zum Block gehören
     private LinkedList<Course> courses = new LinkedList<>();
     public static final Block EMPTY = new Block();
 

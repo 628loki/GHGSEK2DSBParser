@@ -15,14 +15,19 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
+//Die Klasse soll den Stundenplan representieren, wie er mit Änderung ist.
 public class Plan implements Serializable {
 
     private static final long serialVersionUID = 1288665561481381353L;
+    //Die Woche, in Jahreswochen, für die der Plan gilt
     private int week = 0;
+    //Der Jahrgang, für den der Plan gilt
     private int year;
+    //Der Token, welcher zum laden von Daten genutzt wird
     private transient String token;
+    //Die Map, welche jedem Tag seine Stunden zuordnet(index 0 der Liste = 1. Stunde)
     private HashMap<DayOfWeek, LinkedList<Block>> dayListMap = null;
+    //Wann die Map zuletzt geupdatet wurde
     private Date lastUpdate = null;
 
     public Plan(int year, int week) throws DSBNotLoadableException {
@@ -37,27 +42,34 @@ public class Plan implements Serializable {
         }
     }
 
+    //Die Refresh-Methode, durch die die Plan Daten neu geladen werden
     public void refresh() throws IOException, ParseException {
         String jsonData = getJSONString();
         if (jsonData.isEmpty()) return;
         setToken(loadToken(jsonData));
         Date update = getUpdateDate(jsonData);
+        //Falls der Plan das erste mal geladen wird und es keine Kopie auf der Festplatte gibt, lade ihn runter
         if (getDayListMap() == null) {
             if (!loadPlan()) {
                 getNewData(update);
                 return;
             }
         }
+        //Falls das Datum des Plans älter als das aktuelle Update-Datum ist, mache ein update
         if (getLastUpdate() != null && update.after(getLastUpdate())){
             getNewData(update);
             return;
         }
+        //Falls aus irgendeinem Grund die Datums-Daten weg sind, mache ein update
         if (getLastUpdate() == null){
             getNewData(update);
+            return;
         }
+        //Speicher Sicherhaltshalber alles, auch wenn es nicht nötig sein sollte
         setLastUpdate(update);
         savePlan();
     }
+
 
     public void getNewData(Date update) throws IOException {
         String s = download();
@@ -67,6 +79,8 @@ public class Plan implements Serializable {
         savePlan();
     }
 
+    //Das Parsen des geladenen HTMLs in eine Datenstruktur
+    //Der Algorithmus und die Struktur des HTMLs ist etwas schwerer zu erklären, weshalb ich noch schaue, wie ich das am besten mache
     public HashMap<DayOfWeek, LinkedList<Block>> parse(String s){
         for (Map.Entry<String, String> entry : GHGParser.getMappings(getYear()).entrySet()) {
             s = s.replaceAll(entry.getKey(), entry.getValue());
@@ -190,9 +204,10 @@ public class Plan implements Serializable {
         return dayListMap;
     }
 
+    //Den Plan weiter auf ein Standard-Format bringen, was mit den Mappings nicht möglich war
     public void normalize(){
+        //Dämmlicher EInzellfall, bei einer Stunde fehlt der Raum. Das ist der Fix
         getDayListMap().get(DayOfWeek.MONDAY).get(6).getCourses().removeIf(course -> course.getCourseName().equalsIgnoreCase("PADD"));
-
         getDayListMap().get(DayOfWeek.MONDAY).get(5).getCourses().forEach(course -> {
             if ((course.getTeacher().isEmpty() && course.getRoom().equalsIgnoreCase("PADD"))){
                 course.setTeacher(course.getCourseName());
@@ -210,37 +225,41 @@ public class Plan implements Serializable {
 
             }
         });
+
         //Alle leeren Stunden entfernen und doppel STunden entfernen(unterschiedliche Lehrer/gleicher Raum)
-        getDayListMap().forEach((dayOfWeek, blocks) -> {
-            blocks.removeIf(block -> {
-                ArrayList<Course> alreadyRemoved = new ArrayList<>();
-                block.getCourses().removeIf(course -> {
-                    if (!alreadyRemoved.contains(course)) {
-                        for (Course courseDup : block.getCourses()) {
-                            if (courseDup.getRoom().contains(".")) {
-                                courseDup.setRoom(courseDup.getRoom().replace(".", ""));
-                            }
-                            if (!courseDup.equals(course)) {
-                                if (courseDup.getCourseName().equalsIgnoreCase(course.getCourseName())) {
-                                    if (courseDup.getRoom().contains(course.getRoom())) {
-                                        alreadyRemoved.add(course);
-                                        alreadyRemoved.add(courseDup);
-                                        if (!courseDup.getTeacher().contains("/")) {
-                                            courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
-                                        }
-                                        return true;
+        getDayListMap().forEach((dayOfWeek, blocks) -> blocks.removeIf(block -> {
+            ArrayList<Course> alreadyRemoved = new ArrayList<>();
+            block.getCourses().removeIf(course -> {
+                if (!alreadyRemoved.contains(course)) {
+                    for (Course courseDup : block.getCourses()) {
+                        //Fixt, dass bei manchen ein Raum mit Punkt am Ende eingetragen ist
+                        if (courseDup.getRoom().contains(".")){
+                            courseDup.setRoom(courseDup.getRoom().replace(".",""));
+                        }
+                        //Manche Kurse werden eingetragen als zwei verschiedene Kurse, obwohl es nur 2 Lehrer gibt
+                        //Hier wurd das zu einem Kurs zusammengefasst und die Lehrer mit "/" gejoint.
+                        if (!courseDup.equals(course)) {
+                            if (courseDup.getCourseName().equalsIgnoreCase(course.getCourseName())) {
+                                if (courseDup.getRoom().contains(course.getRoom())) {
+                                    alreadyRemoved.add(course);
+                                    alreadyRemoved.add(courseDup);
+                                    if (!courseDup.getTeacher().contains("/")){
+                                        courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
                                     }
                                 }
                             }
                         }
                     }
+                    //Wenn Kurse leer sind, entfernen
                     return course.getCourseName().isEmpty();
                 });
+                //Wenn Kurse leer sind, entfernen
                 return block.getCourses().isEmpty();
             });
         });
     }
 
+    //Serializierd und speichert den Plan
     public void savePlan(){
         File dir = GHGParser.getBasedir();
         try {
@@ -252,6 +271,7 @@ public class Plan implements Serializable {
         }
     }
 
+    //liest den Plan von der Festplatte und gibt zurück, ob er ihn erfolgreich laden konnte
     public boolean loadPlan(){
         File dir = GHGParser.getBasedir();
         try {
@@ -269,6 +289,7 @@ public class Plan implements Serializable {
         }
     }
 
+    //Runterladen des HTMLs vom Server
     public String download() throws IOException{
         String room = getYear() == 12 ? "c00023" : "c00022";
         String week = getWeek() + "";
@@ -292,6 +313,7 @@ public class Plan implements Serializable {
         return stringBuilder.toString();
     }
 
+    //Den JSON-String holen, mit allen möglichen Infos z.B. token, lastupdate
     public String getJSONString() throws IOException{
         URL connectwat = new URL("https://mobileapi.dsbcontrol.de/dsbtimetables?authid=a7f2b46b-4d23-446e-8382-404d55c31f90");
         HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
@@ -307,6 +329,7 @@ public class Plan implements Serializable {
         return stringBuilder.toString();
     }
 
+    //Aus dem JSON String lesen, wann das letzte update war
     public Date getUpdateDate(String s) throws ParseException {
         JSONArray array = new JSONArray(s);
         JSONObject object = (JSONObject) array.get(0);
@@ -319,6 +342,7 @@ public class Plan implements Serializable {
         }
     }
 
+    //Aus dem JSON String den Token holen
     public String loadToken(String s){
         JSONArray array = new JSONArray(s);
         JSONObject object = (JSONObject) array.get(0);

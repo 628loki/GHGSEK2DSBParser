@@ -1,5 +1,5 @@
 package de.berstanio.ghgparser;
-
+//Einfache Enum, welche die Wochentage representiert
 public enum DayOfWeek {
     MONDAY,
     TUESDAY,

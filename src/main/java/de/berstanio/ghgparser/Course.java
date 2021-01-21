@@ -2,7 +2,7 @@ package de.berstanio.ghgparser;
 
 import java.io.Serializable;
 
-
+//Representiert eine Stunde. Felder sind selbsterklärend oder?
 public class Course implements Serializable {
 
     private static final long serialVersionUID = 6838224638086699525L;
