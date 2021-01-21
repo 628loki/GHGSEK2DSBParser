@@ -230,33 +230,33 @@ public class Plan implements Serializable {
         getDayListMap().forEach((dayOfWeek, blocks) -> blocks.removeIf(block -> {
             ArrayList<Course> alreadyRemoved = new ArrayList<>();
             block.getCourses().removeIf(course -> {
-                if (!alreadyRemoved.contains(course)) {
-                    for (Course courseDup : block.getCourses()) {
-                        //Fixt, dass bei manchen ein Raum mit Punkt am Ende eingetragen ist
-                        if (courseDup.getRoom().contains(".")){
-                            courseDup.setRoom(courseDup.getRoom().replace(".",""));
-                        }
-                        //Manche Kurse werden eingetragen als zwei verschiedene Kurse, obwohl es nur 2 Lehrer gibt
-                        //Hier wurd das zu einem Kurs zusammengefasst und die Lehrer mit "/" gejoint.
-                        if (!courseDup.equals(course)) {
-                            if (courseDup.getCourseName().equalsIgnoreCase(course.getCourseName())) {
-                                if (courseDup.getRoom().contains(course.getRoom())) {
-                                    alreadyRemoved.add(course);
-                                    alreadyRemoved.add(courseDup);
-                                    if (!courseDup.getTeacher().contains("/")){
-                                        courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
+                        if (!alreadyRemoved.contains(course)) {
+                            for (Course courseDup : block.getCourses()) {
+                                //Fixt, dass bei manchen ein Raum mit Punkt am Ende eingetragen ist
+                                if (courseDup.getRoom().contains(".")) {
+                                    courseDup.setRoom(courseDup.getRoom().replace(".", ""));
+                                }
+                                //Manche Kurse werden eingetragen als zwei verschiedene Kurse, obwohl es nur 2 Lehrer gibt
+                                //Hier wurd das zu einem Kurs zusammengefasst und die Lehrer mit "/" gejoint.
+                                if (!courseDup.equals(course)) {
+                                    if (courseDup.getCourseName().equalsIgnoreCase(course.getCourseName())) {
+                                        if (courseDup.getRoom().contains(course.getRoom())) {
+                                            alreadyRemoved.add(course);
+                                            alreadyRemoved.add(courseDup);
+                                            if (!courseDup.getTeacher().contains("/")) {
+                                                courseDup.setTeacher(courseDup.getTeacher() + "/" + course.getTeacher());
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    //Wenn Kurse leer sind, entfernen
-                    return course.getCourseName().isEmpty();
-                });
+                        //Wenn Kurse leer sind, entfernen
+                        return course.getCourseName().isEmpty();
+                    });
                 //Wenn Kurse leer sind, entfernen
                 return block.getCourses().isEmpty();
-            });
-        });
+            }));
     }
 
     //Serializierd und speichert den Plan
