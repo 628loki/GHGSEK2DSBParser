@@ -193,7 +193,6 @@ public class Plan implements Serializable {
                                 uebertrag.courses = (LinkedList<Course>) block.getCourses().clone();
                                 uebertragMap.put(colPos, uebertrag);
                             }
-
                             colPos += Integer.parseInt(element.attr("colspan"));
                             System.out.println("(Elem) Aktuelle colPos: " + colPos);
                         }
@@ -328,11 +327,7 @@ public class Plan implements Serializable {
         JSONObject object = (JSONObject) array.get(0);
         String date = (String) object.get("Date");
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy kk:mm");
-        try {
-            return simpleDateFormat.parse(date);
-        } catch (ParseException e) {
-            throw e;
-        }
+        return simpleDateFormat.parse(date);
     }
 
     //Aus dem JSON String den Token holen
