@@ -188,10 +188,7 @@ public class GHGParser {
         }
         try {
             User user = users.get(0);
-            List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
-            String rawHtml = String.join("", rawHtmlList);
 
-            setRawHtml(rawHtml);
             System.out.println(generateHtmlFile(user, week));
             Files.write(Paths.get("out.htm"), generateHtmlFile(user, week).getBytes(StandardCharsets.ISO_8859_1));
         } catch (IOException | DSBNotLoadableException e) {
