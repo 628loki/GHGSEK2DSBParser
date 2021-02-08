@@ -10,6 +10,7 @@ import org.jsoup.select.Elements;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -306,7 +307,7 @@ public class Plan implements Serializable {
 
         urlConnection.connect();
 
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), StandardCharsets.ISO_8859_1));
         return bufferedReader.lines().collect(Collectors.joining());
     }
 
