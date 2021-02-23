@@ -28,6 +28,12 @@ public class JahresStundenPlan extends Plan {
         setCoreCourses(loadCoreCourses());
     }
 
+    @Override
+    public void refresh() throws IOException, ParseException {
+        super.refresh();
+        setCoreCourses(loadCoreCourses());
+    }
+
     //Das laden der wählbaren Kurse
     public ArrayList<CoreCourse> loadCoreCourses(){
         //Erstmal den Plan im Standardformat holen
