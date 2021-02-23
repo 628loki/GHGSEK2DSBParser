@@ -44,43 +44,44 @@ public class Plan implements Serializable {
     }
 
     //Die Refresh-Methode, durch die die Plan Daten neu geladen werden
-    public void refresh() throws IOException, ParseException {
+    public boolean refresh() throws IOException, ParseException {
         String jsonData = getJSONString();
-        if (jsonData.isEmpty()) return;
+        if (jsonData.isEmpty()) return false;
         setToken(loadToken(jsonData));
         Date update = getUpdateDate(jsonData);
         //Falls der Plan das erste mal geladen wird und es keine Kopie auf der Festplatte gibt, lade ihn runter
         if (getDayListMap() == null) {
             if (!loadPlan()) {
                 String s = download();
-                if (s.isEmpty()) return;
+                if (s.isEmpty()) return false;
                 setDayListMap(parse(s));
                 setLastUpdate(update);
                 savePlan();
-                return;
+                return true;
             }
         }
         //Falls das Datum des Plans älter als das aktuelle Update-Datum ist, mache ein update
         if (getLastUpdate() != null && update.after(getLastUpdate())){
             String s = download();
-            if (s.isEmpty()) return;
+            if (s.isEmpty()) return false;
             setDayListMap(parse(s));
             setLastUpdate(update);
             savePlan();
-            return;
+            return true;
         }
         //Falls aus irgendeinem Grund die Datums-Daten weg sind, mache ein update
         if (getLastUpdate() == null){
             String s = download();
-            if (s.isEmpty()) return;
+            if (s.isEmpty()) return false;
             setDayListMap(parse(s));
             setLastUpdate(update);
             savePlan();
-            return;
+            return true;
         }
         //Speicher Sicherhaltshalber alles, auch wenn es nicht nötig sein sollte
         setLastUpdate(update);
         savePlan();
+        return false;
     }
 
     //Das Parsen des geladenen HTMLs in eine Datenstruktur
