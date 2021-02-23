@@ -25,13 +25,15 @@ public class JahresStundenPlan extends Plan {
 
     public JahresStundenPlan(int year) throws DSBNotLoadableException {
         super(year,0);
-        setCoreCourses(loadCoreCourses());
     }
 
     @Override
-    public void refresh() throws IOException, ParseException {
-        super.refresh();
-        setCoreCourses(loadCoreCourses());
+    public boolean refresh() throws IOException, ParseException {
+        boolean b = super.refresh();
+        if (b){
+            setCoreCourses(loadCoreCourses());
+        }
+        return b;
     }
 
     //Das laden der wählbaren Kurse
