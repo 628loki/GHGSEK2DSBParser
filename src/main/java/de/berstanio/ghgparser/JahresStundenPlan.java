@@ -16,7 +16,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.stream.Collectors;
 
-//Die Klasse soll den "Standart-Stundenplan" representieren, wie er ohne Änderung wäre.
+/**
+ * Representiert den "Standart-Stundenplan", wie er ohne Änderung wäre
+ */
 public class JahresStundenPlan extends Plan {
 
     //Eine Liste von möglich wählbaren Kursen
@@ -27,16 +29,25 @@ public class JahresStundenPlan extends Plan {
         super(year,0);
     }
 
+    /**
+     * Lädt den Plan neu
+     * @return Ob es ein Update gab, als boolean
+     * @throws DSBNotLoadableException Wenn keine Verbindung zum DSB hergestellt werden kann
+     */
     @Override
-    public boolean refresh() throws IOException, ParseException {
+    public boolean refresh() throws DSBNotLoadableException {
         boolean b = super.refresh();
         if (b){
+            //Wenn die DayListMap neu geladen wurde, auch die CoreCourses neu laden
             setCoreCourses(loadCoreCourses());
         }
         return b;
     }
 
-    //Das laden der wählbaren Kurse
+    /**
+     * Extrahiert alle wählbaren Kurse aus der dayListMap
+     * @return Liste der wählbaren Kurse
+     */
     public ArrayList<CoreCourse> loadCoreCourses(){
         //Erstmal den Plan im Standardformat holen
         HashMap<DayOfWeek, LinkedList<Block>> dayListMap = getDayListMap();
@@ -123,7 +134,7 @@ public class JahresStundenPlan extends Plan {
                             //Um die verschiedenen Kurse zu unterschieden muss man schauen, was für Kurse sonst noch gleichzeitig laufen
                             //Also der eine gkMa hat immer mit dem gleichen gkPhy Unterricht
                             //Deshalb schaue ich mir den 1. oder 2. gleichzeitig laufenden Kurs an und vergleiche das dann.
-                            //(den 2. nehme ich, falls) der Kurs als erstes ist, zu dem ich gerade den Partner suche.                                
+                            //(den 2. nehme ich, falls) der Kurs als erstes ist, zu dem ich gerade den Partner suche.
                             //Also der eine gkMa hat immer mit dem gleichen gkPhy Unterricht
                             //Deshalb schaue ich mir den 1. oder 2. gleichzeitig laufenden Kurs an und vergleiche das dann.
                             //(den 2. nehme ich, falls) der Kurs als erstes ist, zu dem ich gerade den Partner suche.
@@ -154,7 +165,11 @@ public class JahresStundenPlan extends Plan {
         return finished;
     }
 
-    //Läd von einem String, wann das letzte Update dieses Stundenplans online war
+    /**
+     * Extrahiert aus einem JSON-String das Datum des letzten Plan-Updates
+     * @param s Der JSON-String
+     * @return Das Datum des letzten Plan-Updates als java.util.Date
+     */
     @Override
     public Date getUpdateDate(String s) {
         JSONArray array = new JSONArray(s);
@@ -169,7 +184,11 @@ public class JahresStundenPlan extends Plan {
         }
     }
 
-    //Um Daten runterladen zu können, brauche ich einen Token. Hier extrahiere ich diesen aus einem JSON STring
+    /**
+     * Extrahiert aus einem JSON-String den Token des Plans
+     * @param s Der JSON-String
+     * @return Der Token als String
+     */
     @Override
     public String loadToken(String s){
         JSONArray array = new JSONArray(s);
@@ -177,7 +196,10 @@ public class JahresStundenPlan extends Plan {
         return (String) object.get("Id");
     }
 
-    //Hier wird geladen, in welcher Woche sich der Allgemeine Plan befindet(er wird nicht jede Woche geeupdated und ich brauche die Woche, um Daten laden zu können)
+    /**
+     * Gibt die Kalenderwoche zurück, in der sich der allgemeine Plan befindet
+     * @return Die Kalenderwoche als int, in der sich der allgemeine Plan befindet
+     */
     @Override
     public int getWeek(){
         try {
@@ -198,10 +220,18 @@ public class JahresStundenPlan extends Plan {
         }
     }
 
+    /**
+     * Gibt die Liste aller wählbaren Kurse zurück
+     * @return Die Liste aller wählbaren Kurse
+     */
     public ArrayList<CoreCourse> getCoreCourses() {
         return coreCourses;
     }
 
+    /**
+     * Setzt die Liste aller wählbaren Kurse
+     * @param coreCourses Die Liste aller wählbaren Kurse
+     */
     public void setCoreCourses(ArrayList<CoreCourse> coreCourses) {
         this.coreCourses = coreCourses;
     }

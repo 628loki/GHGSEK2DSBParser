@@ -8,7 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-//EInen kleinen Logger den ich geschrieben habe, ist aber nicht so relevant
+
+/**
+ * Ein kleine Logger den ich geschrieben habe, ist aber nicht so relevant
+ */
 public class Logger {
 
    static class LogPrintStream extends OutputStream{

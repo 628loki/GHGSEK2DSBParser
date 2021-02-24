@@ -9,7 +9,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-//Ein Nutzerprofil
+
+/**
+ * Representiert ein Nutzerprofil mit gewählten Kursen.
+ */
 public class User implements Serializable{
 
     //Die Liste von gewählten Kursen
@@ -24,6 +27,12 @@ public class User implements Serializable{
         saveUser();
     }
 
+    /**
+     * Maskiert alle Kurse aus einem Plan weg, die der User nicht belegt hat.
+     * @param dayListMap Die Map, aus der die nicht belegten Elemente wegmaskiert werden sollen
+     * @return Die Map, nach der maskierung
+     */
+    //
     public HashMap<DayOfWeek, LinkedList<Course>> maskPlan(HashMap<DayOfWeek, LinkedList<Block>> dayListMap){
         HashMap<DayOfWeek, LinkedList<Course>> newMap = new HashMap<>();
 
@@ -100,6 +109,10 @@ public class User implements Serializable{
         return newMap;
     }
 
+    /**
+     * Lädt die UserProfile von der Festplatte
+     * @return Eine Liste von Usern, die auf der Festplatte gespeichert waren
+     */
     //Läd User-Daten
     public static ArrayList<User> loadUsers(){
         File dir = GHGParser.getBasedir();
@@ -124,7 +137,9 @@ public class User implements Serializable{
         return users;
     }
 
-    //User löschen
+    /**
+     * Löscht den akutellen User
+     */
     public void deleteUser(){
         File dir = GHGParser.getBasedir();
         File file = new File(dir.getAbsolutePath() + "/" + hashCode() + ".yml");
@@ -132,7 +147,10 @@ public class User implements Serializable{
         GHGParser.getUsers().remove(this);
     }
 
-    //Der Dateiname ist der HashCode des Users. Ist das eine schlechte Idee?
+    /**
+     * Speichert den aktuellen User
+     */
+    //Der Dateiname ist der HashCode des Users. Ist das eine schlechte Idee? HashCodes sind ja auf einzigartigkeit ausgelegt
     public void saveUser(){
         try {
             File dir = GHGParser.getBasedir();
@@ -145,18 +163,34 @@ public class User implements Serializable{
     }
 
 
+    /**
+     * Gibt die Liste an belegten Kursen zurück
+     * @return Die Liste an belegten Kursen
+     */
     public ArrayList<CoreCourse> getCoreCourses() {
         return coreCourses;
     }
 
+    /**
+     * Setzt die Liste an belegten Kursen
+     * @param coreCourses Die Liste an belegten Kursen
+     */
     public void setCoreCourses(ArrayList<CoreCourse> coreCourses) {
         this.coreCourses = coreCourses;
     }
 
+    /**
+     * Gibt den Jahrgang des Profils zurück
+     * @return Der Jahrgang als int
+     */
     public int getYear() {
         return year;
     }
 
+    /**
+     * Setzt den Jahrgang des Profils
+     * @param year Der Jahrgang als int
+     */
     public void setYear(int year) {
         this.year = year;
     }

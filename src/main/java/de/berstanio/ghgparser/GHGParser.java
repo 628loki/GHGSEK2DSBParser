@@ -4,8 +4,13 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 
+/**
+ * Die Hauptklasse, welche für die Initialisierung zuständig ist. Die Hauptschnittstelle zu dem Programm
+ */
 public class GHGParser {
 
     //Eine Liste von Nutzer-Profilen
@@ -23,20 +28,21 @@ public class GHGParser {
     //Eine Mapping Tabelle, zum anpassen des Plan-HTMLs, welches runtergeladen wird, auf einen Standard(für die 12.)
     private static HashMap<String, String> toReplace12 = new HashMap<>();
 
-    //Die init Methode, welche alles nötige initalisiert(Die Profile, Mappings etc.)
-    public static void init(InputStream rawHtmlStream, File basedir) throws IOException, DSBNotLoadableException {
+    /**
+     * Die init Methode, welche alles nötige initalisiert(Die Profile, Mappings etc.)
+     * @param rawHtmlStream Ein InputStream, durch welches das HTML mit Platzhaltern geladen werden kann
+     * @param basedir Der Ordner, in dem das Programm seine Daten speichern kann/soll
+     * @throws DSBNotLoadableException Wenn der Jahresstundenplan vom DSB nicht geladen werden kann
+     */
+    public static void init(InputStream rawHtmlStream, File basedir) throws DSBNotLoadableException {
         setBasedir(basedir);
 
         readMappings();
         ArrayList<User> users = User.loadUsers();
         setUsers(users);
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream));
-        String line;
-        StringBuilder rawHtmlBuilder = new StringBuilder();
-        while ((line = bufferedReader.readLine()) != null){
-            rawHtmlBuilder.append(line);
-        }
-        setRawHtml(rawHtmlBuilder.toString());
+
+        setRawHtml(bufferedReader.lines().collect(Collectors.joining()));
 
         setJahresStundenPlan(new JahresStundenPlan(11));
         setJahresStundenPlan(new JahresStundenPlan(12));
@@ -69,10 +75,23 @@ public class GHGParser {
 
     }
 
+    /**
+     * Die Funktion generiert von einem Profil und einer Woche, einen zugehörigen personalisierten HTML-Plan
+     * @param user User, für den das HTML erzeugt werden soll
+     * @param week Die Kalenderwoche als int, für die das HTML erzeugt werden soll
+     * @return Das generierte HTML als String
+     * @throws DSBNotLoadableException Wenn der Plan für die Woche für den Jahrgang des Users nicht geladen werden kann
+     */
     public static String generateHtmlFile(User user, int week) throws DSBNotLoadableException {
         return generateHtmlFile(user, new Plan(user.getYear(), week));
     }
 
+    /**
+     * Die Funktion generiert von einem Profil und einer Woche, einen zugehörigen personalisierten HTML-Plan
+     * @param user User, für den das HTML erzeugt werden soll
+     * @param plan Der Plan, der personalisiert werden soll
+     * @return Das generierte HTML als String
+     */
     //Die Funktion generiert die fertige HTML-Datei.
     public static String generateHtmlFile(User user, Plan plan) {
         String html = getRawHtml();
@@ -116,6 +135,11 @@ public class GHGParser {
         return html;
     }
 
+    /**
+     * Gibt die Mapping-Map zurück für einen Jahrgang
+     * @param year Das Jahr, für welche die Mapping-Map zurück gegeben werden soll
+     * @return Die Mapping-Map, zum Anpassen des Stundenplan-HTMLs
+     */
     public static HashMap<String, String> getMappings(int year){
         return year == 12 ? toReplace12 : toReplace11;
     }
@@ -136,7 +160,7 @@ public class GHGParser {
 
     }
 
-    //Ist nur eine Test-Mainmethode. Kannst du ignorieren.
+    //Ist nur eine Test-Mainmethode.
     public static void main(String[] args) throws IOException, DSBNotLoadableException {
         try {
             Class.forName("de.berstanio.ghgparser.Logger");
@@ -196,26 +220,51 @@ public class GHGParser {
         }
     }
 
+    /**
+     * Gibt eine User-Liste zurück mit allen Usern, die im Programm erstellt wurden
+     * @return Eine User-Liste zurück mit allen Usern
+     */
     public static ArrayList<User> getUsers() {
         return users;
     }
 
+    /**
+     * Setzt eine User-Liste mit allen Usern, die im Programm erstellt wurden
+     * @param users Eine User-Liste zurück mit allen Usern
+     */
     public static void setUsers(ArrayList<User> users) {
         GHGParser.users = users;
     }
 
+    /**
+     * Gibt das Plan-HTML mit Platzhaltern zurück
+     * @return Das Plan-HTML mit Platzhaltern als String
+     */
     public static String getRawHtml() {
         return rawHtml;
     }
 
+    /**
+     * Setzt das Plan-HTML mit Platzhaltern
+     * @param rawHtml Das Plan-HTML mit Platzhaltern als String
+     */
     public static void setRawHtml(String rawHtml) {
         GHGParser.rawHtml = rawHtml;
     }
 
+    /**
+     * Gibt den Jahresstundenplan für einen Jahrgang zurück
+     * @param year Der Jahrgang, zu dem der Jahresstundenplan zurück gegeben werden soll
+     * @return Den Jahresstundenplan für den JAhrgang
+     */
     public static JahresStundenPlan getJahresStundenPlan(int year) {
         return year == 12 ? jahresStundenPlan12 : jahresStundenPlan11;
     }
 
+    /**
+     * Setzt den Jahresstundenplan, für den passenden Jahrgang
+     * @param jahresStundenPlan Der Jahresstundenplan der gesetzt werden soll
+     */
     public static void setJahresStundenPlan(JahresStundenPlan jahresStundenPlan) {
         if (jahresStundenPlan.getYear() == 11){
             jahresStundenPlan11 = jahresStundenPlan;
@@ -224,10 +273,18 @@ public class GHGParser {
         }
     }
 
+    /**
+     * Gibt den Ordner zurück, in welchen das Programm speichern soll
+     * @return Der Ordner als File, in welchen das Programm speichern soll
+     */
     public static File getBasedir() {
         return basedir;
     }
 
+    /**
+     * Setzt den Ordner, in welchen das Programm speichern soll
+     * @param basedir Der Ordner als File, in welchen das Programm speichern soll
+     */
     public static void setBasedir(File basedir) {
         GHGParser.basedir = basedir;
     }
