@@ -37,7 +37,7 @@ public class JahresStundenPlan extends Plan {
     @Override
     public boolean refresh() throws DSBNotLoadableException {
         boolean b = super.refresh();
-        if (b){
+        if (b || getCoreCourses() == null){
             //Wenn die DayListMap neu geladen wurde, auch die CoreCourses neu laden
             setCoreCourses(loadCoreCourses());
         }
