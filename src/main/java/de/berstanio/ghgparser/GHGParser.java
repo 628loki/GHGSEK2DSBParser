@@ -40,9 +40,12 @@ public class GHGParser {
         readMappings();
         ArrayList<User> users = User.loadUsers();
         setUsers(users);
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream));
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream))){
+            setRawHtml(bufferedReader.lines().collect(Collectors.joining()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        setRawHtml(bufferedReader.lines().collect(Collectors.joining()));
 
         setJahresStundenPlan(new JahresStundenPlan(11));
         setJahresStundenPlan(new JahresStundenPlan(12));
@@ -146,18 +149,23 @@ public class GHGParser {
 
     //Das lesen der Mappings
     private static void readMappings(){
-        new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings11.txt")))
-                .lines().forEach(s -> {
-                    String[] split = s.split(">");
-                    toReplace11.put(split[0], split[1]);
-        });
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings11.txt")))) {
+            bufferedReader.lines().forEach(s -> {
+                String[] split = s.split(">");
+                toReplace11.put(split[0], split[1]);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings12.txt")))
-                .lines().forEach(s -> {
-            String[] split = s.split(">");
-            toReplace12.put(split[0], split[1]);
-        });
-
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings12.txt")))) {
+            bufferedReader.lines().forEach(s -> {
+                String[] split = s.split(">");
+                toReplace12.put(split[0], split[1]);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     //Ist nur eine Test-Mainmethode.
