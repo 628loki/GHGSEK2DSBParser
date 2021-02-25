@@ -1,14 +1,9 @@
 package de.berstanio.ghgparser;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * Representiert ein Nutzerprofil mit gewählten Kursen.
@@ -16,14 +11,14 @@ import java.util.stream.Stream;
 public class User implements Serializable{
 
     //Die Liste von gewählten Kursen
-    private ArrayList<CoreCourse> coreCourses = new ArrayList<>();
+    private ArrayList<CoreCourse> coreCourses;
     //Für welches Jahr das Profil gilt.
     private int year;
     public static final long serialVersionUID = -2636346567614007956L;
 
     public User(ArrayList<CoreCourse> coreCourses, int year){
-        setCoreCourses(coreCourses);
-        setYear(year);
+        this.coreCourses = coreCourses;
+        this.year = year;
         saveUser();
     }
 

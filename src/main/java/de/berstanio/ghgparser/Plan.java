@@ -34,8 +34,8 @@ public class Plan implements Serializable {
     private Date lastUpdate = null;
 
     public Plan(int year, int week) throws DSBNotLoadableException {
-        setYear(year);
-        setWeek(week);
+        this.year = year;
+        this.week = week;
         refresh();
 
     }
@@ -409,14 +409,6 @@ public class Plan implements Serializable {
     }
 
     /**
-     * Setzt die Woche des Plans, die er representiert
-     * @param week Die Kalenderwoche als int
-     */
-    public void setWeek(int week) {
-        this.week = week;
-    }
-
-    /**
      * Gibt den aktuellen Inhalt des Plans zurück
      * @return Der Inhalt des Plans als Map
      */
@@ -454,14 +446,6 @@ public class Plan implements Serializable {
      */
     public int getYear() {
         return year;
-    }
-
-    /**
-     * Setzt den Jahrgang für den der Plan gilt
-     * @param year Der Jahrgang als int
-     */
-    public void setYear(int year) {
-        this.year = year;
     }
 
     private static class Transfer {

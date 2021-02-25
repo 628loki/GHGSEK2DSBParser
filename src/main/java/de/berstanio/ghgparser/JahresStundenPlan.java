@@ -105,7 +105,7 @@ public class JahresStundenPlan extends Plan {
                     });
                     //Wir haben dämliche Einzelfälle, in denen Stunden nicht zu einem Kurs gehören... Die müssen dann getrennt werden.
                     if (course.getCourseName().contains("-vb") || course.getCourseName().contains("DELF")) {
-                        duplicates.stream().forEachOrdered(course1 -> {
+                        duplicates.forEach(course1 -> {
                             CoreCourse coreCourse = new CoreCourse();
                             coreCourse.setCourseName(course.getCourseName());
                             coreCourse.setTeacher(course.getTeacher());

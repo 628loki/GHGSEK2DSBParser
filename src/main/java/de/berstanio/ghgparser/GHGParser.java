@@ -4,7 +4,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,9 +23,9 @@ public class GHGParser {
     //Der Ordner, in dem alles gespeichert werden soll
     private static File basedir;
     //Eine Mapping Tabelle, zum anpassen des Plan-HTMLs, welches runtergeladen wird, auf einen Standard(für die 11.)
-    private static HashMap<String, String> toReplace11 = new HashMap<>();
+    private static final HashMap<String, String> toReplace11 = new HashMap<>();
     //Eine Mapping Tabelle, zum anpassen des Plan-HTMLs, welches runtergeladen wird, auf einen Standard(für die 12.)
-    private static HashMap<String, String> toReplace12 = new HashMap<>();
+    private static final HashMap<String, String> toReplace12 = new HashMap<>();
 
     /**
      * Die init Methode, welche alles nötige initalisiert(Die Profile, Mappings etc.)
@@ -169,7 +168,7 @@ public class GHGParser {
     }
 
     //Ist nur eine Test-Mainmethode.
-    public static void main(String[] args) throws IOException, DSBNotLoadableException {
+    public static void main(String[] args) throws DSBNotLoadableException {
         try {
             Class.forName("de.berstanio.ghgparser.Logger");
         } catch (ClassNotFoundException e) {
