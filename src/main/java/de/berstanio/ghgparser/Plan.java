@@ -54,7 +54,7 @@ public class Plan implements Serializable {
             update = getUpdateDate(jsonData);
         }catch (ParseException e) {
             e.printStackTrace();
-            update = new Date(0);
+            update = new Date();
         }
         //Falls der Plan das erste mal geladen wird und es keine Kopie auf der Festplatte gibt, lade ihn runter
         if (getDayListMap() == null) {

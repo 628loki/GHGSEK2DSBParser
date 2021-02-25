@@ -171,17 +171,12 @@ public class JahresStundenPlan extends Plan {
      * @return Das Datum des letzten Plan-Updates als java.util.Date
      */
     @Override
-    public Date getUpdateDate(String s) {
+    public Date getUpdateDate(String s) throws ParseException {
         JSONArray array = new JSONArray(s);
         JSONObject object = (JSONObject) array.get(1);
         String date = (String) object.get("Date");
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy kk:mm");
-        try {
-            return simpleDateFormat.parse(date);
-        } catch (ParseException e) {
-            e.printStackTrace();
-            return new Date();
-        }
+        return simpleDateFormat.parse(date);
     }
 
     /**
