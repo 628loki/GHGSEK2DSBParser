@@ -293,6 +293,7 @@ public class GHGParser {
      * @param basedir Der Ordner als File, in welchen das Programm speichern soll
      */
     public static void setBasedir(File basedir) {
+        if (!basedir.exists()) basedir.mkdir();
         GHGParser.basedir = basedir;
     }
 }
