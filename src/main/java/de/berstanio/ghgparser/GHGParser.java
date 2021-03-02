@@ -97,6 +97,7 @@ public class GHGParser {
     //Die Funktion generiert die fertige HTML-Datei.
     public static String generateHtmlFile(User user, Plan plan) {
         String html = getRawHtml();
+        html = html.replace("JGPH", user.getYear() + "");
         //bringt den runtergeladenen Plan in eine Standard-Form
         plan.normalize();
         //Maskiert alle Kurse weg, die nicht vom Nutzer belegt wurden
