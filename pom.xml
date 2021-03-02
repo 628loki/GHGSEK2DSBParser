@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.berstanio</groupId>
-    <artifactId>GHGSEK2DSBParser</artifactId>
+    <artifactId>ghgsek2dsbparser</artifactId>
     <version>1.2.1</version>
 
     <properties>
