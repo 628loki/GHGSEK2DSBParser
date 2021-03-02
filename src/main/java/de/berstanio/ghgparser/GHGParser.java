@@ -5,36 +5,53 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+/**
+ * Die Hauptklasse, welche für die Initialisierung zuständig ist. Die Hauptschnittstelle zu dem Programm
+ */
 public class GHGParser {
 
+    //Eine Liste von Nutzer-Profilen
     private static ArrayList<User> users;
+    //Eine HTML-Datei, welche Platzhalter hat zum einfachen einsetzen der Stunden
     private static String rawHtml;
+    //Der Jahrestundenplan der 11
     private static JahresStundenPlan jahresStundenPlan11;
+    //Der Jahrestundenplan der 12
     private static JahresStundenPlan jahresStundenPlan12;
+    //Der Ordner, in dem alles gespeichert werden soll
     private static File basedir;
-    private static HashMap<String, String> toReplace11 = new HashMap<>();
-    private static HashMap<String, String> toReplace12 = new HashMap<>();
+    //Eine Mapping Tabelle, zum anpassen des Plan-HTMLs, welches runtergeladen wird, auf einen Standard(für die 11.)
+    private static final HashMap<String, String> toReplace11 = new HashMap<>();
+    //Eine Mapping Tabelle, zum anpassen des Plan-HTMLs, welches runtergeladen wird, auf einen Standard(für die 12.)
+    private static final HashMap<String, String> toReplace12 = new HashMap<>();
 
-    public static void init(InputStream rawHtmlStream, File basedir) throws IOException, DSBNotLoadableException {
+    /**
+     * Die init Methode, welche alles nötige initalisiert(Die Profile, Mappings etc.)
+     * @param rawHtmlStream Ein InputStream, durch welches das HTML mit Platzhaltern geladen werden kann
+     * @param basedir Der Ordner, in dem das Programm seine Daten speichern kann/soll
+     * @throws DSBNotLoadableException Wenn der Jahresstundenplan vom DSB nicht geladen werden kann
+     */
+    public static void init(InputStream rawHtmlStream, File basedir) throws DSBNotLoadableException {
         setBasedir(basedir);
 
         readMappings();
         ArrayList<User> users = User.loadUsers();
         setUsers(users);
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream));
-        String line;
-        StringBuilder rawHtmlBuilder = new StringBuilder();
-        while ((line = bufferedReader.readLine()) != null){
-            rawHtmlBuilder.append(line);
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream))){
+            setRawHtml(bufferedReader.lines().collect(Collectors.joining()));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        setRawHtml(rawHtmlBuilder.toString());
+
 
         setJahresStundenPlan(new JahresStundenPlan(11));
         setJahresStundenPlan(new JahresStundenPlan(12));
     }
 
+    //Eine Methode, welche eine List von bereis gewählten Kursen als Input krigt und dann alle möglichen Kurse und zurück gibt,
+    //welche Kurse noch wählbar sind. Eigentlich wird sie nicht mehr genutzt, wie mir gerade beim schreiben auffällt, weshalb ich sie ausbauen könnte...
     public static ArrayList<CoreCourse> remainingCoreCourses(ArrayList<CoreCourse> choosen, ArrayList<CoreCourse> remaining){
         ArrayList<String> blockedCourses = new ArrayList<>();
         ArrayList<String> blockedNames = new ArrayList<>();
@@ -60,62 +77,99 @@ public class GHGParser {
 
     }
 
+    /**
+     * Die Funktion generiert von einem Profil und einer Woche, einen zugehörigen personalisierten HTML-Plan
+     * @param user User, für den das HTML erzeugt werden soll
+     * @param week Die Kalenderwoche als int, für die das HTML erzeugt werden soll
+     * @return Das generierte HTML als String
+     * @throws DSBNotLoadableException Wenn der Plan für die Woche für den Jahrgang des Users nicht geladen werden kann
+     */
     public static String generateHtmlFile(User user, int week) throws DSBNotLoadableException {
         return generateHtmlFile(user, new Plan(user.getYear(), week));
     }
 
-    public static String generateHtmlFile(User user, Plan plan) throws DSBNotLoadableException {
-        AtomicReference<String> rawHtmlReference = new AtomicReference<>();
-        rawHtmlReference.set(rawHtml);
-
+    /**
+     * Die Funktion generiert von einem Profil und einer Woche, einen zugehörigen personalisierten HTML-Plan
+     * @param user User, für den das HTML erzeugt werden soll
+     * @param plan Der Plan, der personalisiert werden soll
+     * @return Das generierte HTML als String
+     */
+    //Die Funktion generiert die fertige HTML-Datei.
+    public static String generateHtmlFile(User user, Plan plan) {
+        String html = getRawHtml();
+        html = html.replace("JGPH", user.getYear() + "");
+        //bringt den runtergeladenen Plan in eine Standard-Form
         plan.normalize();
+        //Maskiert alle Kurse weg, die nicht vom Nutzer belegt wurden
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
+        //Ein HTML-String, damit ich leichter etwas durchstreichen kann. "con" ist der Platzhalter von dem, was durchgetrichen werden soll
         String strikes = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\"><strike>con</strike>";
-        masked.forEach((dayOfWeek, courses) -> courses.forEach(course -> {
-            for (int i = 0; i < course.getLength(); i++) {
-                String room = course.getRoom();
-                String name = course.getCourseName();
-                String teacher = course.getTeacher();
-                if (course.isCancelled()){
-                    room = strikes.replace("con", room);
-                    name = strikes.replace("con", name);
-                    teacher = strikes.replace("con", teacher);
-                }else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).size() > course.getLesson() - 1
-                        && getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
-                        .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
-                        && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
-                        && !comp.getRoom().equalsIgnoreCase(course.getRoom()))){
-                    room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+      //Über alle belegten Kurse in ihrem momentanen Zustand rüberiterieren(Zwei Lambdas(man sieht es schlecht))
+        for (LinkedList<Course> courses : masked.values()) {
+            for (Course course : courses) {
+                for (int i = 0; i < course.getLength(); i++) {
+                    //Ein Kurs kann z.B. 2 Stunden lan gehen. Jede Stunde muss aber eingetragen werden. Deshalb wird der Kurs so lange untereinander
+                    //eingetragen, wie er lang ist
+                    String room = course.getRoom();
+                    String name = course.getCourseName();
+                    String teacher = course.getTeacher();
+                    if (course.getCourseName().isEmpty() && course.getTeacher().isEmpty() && course.getRoom().isEmpty()){
+
+                    }else if (course.isCancelled()) {
+                        //Wenn der Kurs ausfällt, ihn durchgestrichen anzeigen
+                        room = strikes.replace("con", room);
+                        name = strikes.replace("con", name);
+                        teacher = strikes.replace("con", teacher);
+                      //Wenn es im aktuellen Plan eine Stunde gibt, die den gleichen Lehrer und den gleichen Kursnamen hat, aber unterschiedlichen Raum als im Jahresstundenplan
+                      //Dann ist es eine Raumänderung
+                    } else if (getJahresStundenPlan(user.getYear()).getDayListMap().get(course.getDay()).get(course.getLesson() - 1)
+                            .getCourses().stream().anyMatch(comp -> comp.getCourseName().equalsIgnoreCase(course.getCourseName())
+                                    && comp.getTeacher().equalsIgnoreCase(course.getTeacher())
+                                    && !comp.getRoom().equalsIgnoreCase(course.getRoom()))) {
+                        room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
+                    }
+                    //Die Platzhalter sind "MO1R" für Montag 1 Stunde Raum aufgebaut. da wird das einfach ersetzt.
+                    html = html.replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
+                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher);
                 }
-                rawHtmlReference.set(rawHtmlReference.get()
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
-                        .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher));
             }
-        }));
-        return rawHtmlReference.get();
+        }
+        return html;
     }
 
+    /**
+     * Gibt die Mapping-Map zurück für einen Jahrgang
+     * @param year Das Jahr, für welche die Mapping-Map zurück gegeben werden soll
+     * @return Die Mapping-Map, zum Anpassen des Stundenplan-HTMLs
+     */
     public static HashMap<String, String> getMappings(int year){
         return year == 12 ? toReplace12 : toReplace11;
     }
 
+    //Das lesen der Mappings
     private static void readMappings(){
-        new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings11.txt")))
-                .lines().forEach(s -> {
-                    String[] split = s.split(">");
-                    toReplace11.put(split[0], split[1]);
-        });
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings11.txt")))) {
+            bufferedReader.lines().forEach(s -> {
+                String[] split = s.split(">");
+                toReplace11.put(split[0], split[1]);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings12.txt")))
-                .lines().forEach(s -> {
-            String[] split = s.split(">");
-            toReplace12.put(split[0], split[1]);
-        });
-
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/mappings12.txt")))) {
+            bufferedReader.lines().forEach(s -> {
+                String[] split = s.split(">");
+                toReplace12.put(split[0], split[1]);
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public static void main(String[] args) throws IOException, DSBNotLoadableException {
+    //Ist nur eine Test-Mainmethode.
+    public static void main(String[] args) throws DSBNotLoadableException {
         try {
             Class.forName("de.berstanio.ghgparser.Logger");
         } catch (ClassNotFoundException e) {
@@ -165,13 +219,8 @@ public class GHGParser {
             e.printStackTrace();
         }
         try {
-            // TODO: 27.11.2020 Schwimmen falsch erkannt
-            //setYear(11);
             User user = users.get(0);
-            List<String> rawHtmlList = Files.readAllLines(Paths.get("rawPage.htm"), StandardCharsets.UTF_8);
-            String rawHtml = String.join("", rawHtmlList);
 
-            setRawHtml(rawHtml);
             System.out.println(generateHtmlFile(user, week));
             Files.write(Paths.get("out.htm"), generateHtmlFile(user, week).getBytes(StandardCharsets.ISO_8859_1));
         } catch (IOException | DSBNotLoadableException e) {
@@ -179,26 +228,51 @@ public class GHGParser {
         }
     }
 
+    /**
+     * Gibt eine User-Liste zurück mit allen Usern, die im Programm erstellt wurden
+     * @return Eine User-Liste zurück mit allen Usern
+     */
     public static ArrayList<User> getUsers() {
         return users;
     }
 
+    /**
+     * Setzt eine User-Liste mit allen Usern, die im Programm erstellt wurden
+     * @param users Eine User-Liste zurück mit allen Usern
+     */
     public static void setUsers(ArrayList<User> users) {
         GHGParser.users = users;
     }
 
+    /**
+     * Gibt das Plan-HTML mit Platzhaltern zurück
+     * @return Das Plan-HTML mit Platzhaltern als String
+     */
     public static String getRawHtml() {
         return rawHtml;
     }
 
+    /**
+     * Setzt das Plan-HTML mit Platzhaltern
+     * @param rawHtml Das Plan-HTML mit Platzhaltern als String
+     */
     public static void setRawHtml(String rawHtml) {
         GHGParser.rawHtml = rawHtml;
     }
 
+    /**
+     * Gibt den Jahresstundenplan für einen Jahrgang zurück
+     * @param year Der Jahrgang, zu dem der Jahresstundenplan zurück gegeben werden soll
+     * @return Den Jahresstundenplan für den JAhrgang
+     */
     public static JahresStundenPlan getJahresStundenPlan(int year) {
         return year == 12 ? jahresStundenPlan12 : jahresStundenPlan11;
     }
 
+    /**
+     * Setzt den Jahresstundenplan, für den passenden Jahrgang
+     * @param jahresStundenPlan Der Jahresstundenplan der gesetzt werden soll
+     */
     public static void setJahresStundenPlan(JahresStundenPlan jahresStundenPlan) {
         if (jahresStundenPlan.getYear() == 11){
             jahresStundenPlan11 = jahresStundenPlan;
@@ -207,11 +281,20 @@ public class GHGParser {
         }
     }
 
+    /**
+     * Gibt den Ordner zurück, in welchen das Programm speichern soll
+     * @return Der Ordner als File, in welchen das Programm speichern soll
+     */
     public static File getBasedir() {
         return basedir;
     }
 
+    /**
+     * Setzt den Ordner, in welchen das Programm speichern soll
+     * @param basedir Der Ordner als File, in welchen das Programm speichern soll
+     */
     public static void setBasedir(File basedir) {
+        if (!basedir.exists()) basedir.mkdir();
         GHGParser.basedir = basedir;
     }
 }
