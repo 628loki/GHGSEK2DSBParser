@@ -1,6 +1,9 @@
 package de.berstanio.ghgparser;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -29,17 +32,16 @@ public class GHGParser {
 
     /**
      * Die init Methode, welche alles nötige initalisiert(Die Profile, Mappings etc.)
-     * @param rawHtmlStream Ein InputStream, durch welches das HTML mit Platzhaltern geladen werden kann
      * @param basedir Der Ordner, in dem das Programm seine Daten speichern kann/soll
      * @throws DSBNotLoadableException Wenn der Jahresstundenplan vom DSB nicht geladen werden kann
      */
-    public static void init(InputStream rawHtmlStream, File basedir) throws DSBNotLoadableException {
+    public static void init(File basedir) throws DSBNotLoadableException {
         setBasedir(basedir);
 
         readMappings();
         ArrayList<User> users = User.loadUsers();
         setUsers(users);
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(rawHtmlStream))){
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(GHGParser.class.getResourceAsStream("/rawPage.htm")))){
             setRawHtml(bufferedReader.lines().collect(Collectors.joining()));
         } catch (IOException e) {
             e.printStackTrace();
@@ -175,7 +177,7 @@ public class GHGParser {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        init(GHGParser.class.getResourceAsStream("/rawPage.htm"), new File("user/"));
+        init(new File("user/"));
         setBasedir(new File("user/"));
         Calendar calendar = Calendar.getInstance();
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
