@@ -318,7 +318,8 @@ public class Plan implements Serializable {
      */
     //Runterladen des HTMLs vom Server
     public String download() throws DSBNotLoadableException {
-        String room = getYear() == 12 ? "c00023" : "c00022";
+        // TODO: 09.08.2021 Find better solution (https://github.com/Berstanio/GHGSEK2DSBParser/issues/3)
+        String room = getYear() == 12 ? "c00024" : "c00023";
         String week = getWeek() + "";
         if (week.length() == 1){
             week = "0" + week;
