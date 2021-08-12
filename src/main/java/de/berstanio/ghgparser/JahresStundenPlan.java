@@ -185,10 +185,20 @@ public class JahresStundenPlan extends Plan {
      * @return Der Token als String
      */
     @Override
-    public String loadToken(String s){
+    public String loadToken(String s) throws DSBNotLoadableException {
         JSONArray array = new JSONArray(s);
-        JSONObject object = (JSONObject) array.get(1);
-        return (String) object.get("Id");
+        // We need this for loop because android replaces the json api with a already provided one where JSONArray doesn't implement Iterable
+        // https://stackoverflow.com/questions/57274183/android-issue-using-json-library-in-pure-java-package
+        for (int i = 0; i < array.length(); i++) {
+            Object object = array.get(i);
+            if (object instanceof JSONObject) {
+                JSONObject jsonObject = (JSONObject) object;
+                if (jsonObject.get("Title").toString().contains("Jahresstundenplan")) {
+                    return (String) jsonObject.get("Id");
+                }
+            }
+        }
+        throw new DSBNotLoadableException("Can't load token for JSP from string: " + s);
     }
 
     /**

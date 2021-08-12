@@ -10,4 +10,8 @@ public class DSBNotLoadableException extends Exception{
     public DSBNotLoadableException(Throwable cause) {
         super(cause);
     }
+
+    public DSBNotLoadableException(String cause) {
+        super(cause);
+    }
 }

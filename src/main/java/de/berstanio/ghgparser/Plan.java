@@ -379,10 +379,20 @@ public class Plan implements Serializable {
      * @param s Der JSON-String
      * @return Den Token als String
      */
-    public String loadToken(String s){
+    public String loadToken(String s) throws DSBNotLoadableException {
         JSONArray array = new JSONArray(s);
-        JSONObject object = (JSONObject) array.get(0);
-        return (String) object.get("Id");
+        // We need this for loop because android replaces the json api with a already provided one where JSONArray doesn't implement Iterable
+        // https://stackoverflow.com/questions/57274183/android-issue-using-json-library-in-pure-java-package
+        for (int i = 0; i < array.length(); i++) {
+            Object object = array.get(i);
+            if (object instanceof JSONObject) {
+                JSONObject jsonObject = (JSONObject) object;
+                if (jsonObject.get("Title").toString().contains("ExpVTKlaNetz")) {
+                    return (String) jsonObject.get("Id");
+                }
+            }
+        }
+        throw new DSBNotLoadableException("Can't load token for week: " + getWeek() +" from string: " + s);
     }
 
     /**
