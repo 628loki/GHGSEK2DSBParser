@@ -328,7 +328,7 @@ public class Plan implements Serializable {
             week = "01";
         }
         try {
-            URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + week + "/c/" + room + ".htm");
+            URL connectwat = new URL("https://dsbmobile.de/data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/" + week + "/c/" + room + ".htm");
             HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
 
             urlConnection.connect();

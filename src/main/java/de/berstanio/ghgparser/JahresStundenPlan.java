@@ -198,7 +198,7 @@ public class JahresStundenPlan extends Plan {
     @Override
     public int getWeek(){
         try {
-            URL connectwat = new URL("https://light.dsbcontrol.de/DSBlightWebsite/Data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/data.js");
+            URL connectwat = new URL("https://dsbmobile.de/data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/data.js");
             HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
 
             urlConnection.connect();
