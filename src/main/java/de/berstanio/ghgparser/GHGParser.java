@@ -135,7 +135,7 @@ public class GHGParser {
                     html = html.replace(replacePrefix + "R", room)
                             .replace(replacePrefix + "C", name)
                             .replace(replacePrefix + "L", teacher)
-                            .replace(replacePrefix + "D", course.getLengthInMin() == 0 ? "" : course.getLengthInMin() + " min");
+                            .replace(replacePrefix + "D", course.getLengthInMin() == 0 ? "" : course.getLengthInMin() + "");
                 }
             }
         }
