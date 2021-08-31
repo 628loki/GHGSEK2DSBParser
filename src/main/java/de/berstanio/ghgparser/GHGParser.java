@@ -130,10 +130,12 @@ public class GHGParser {
                                     && !comp.getRoom().equalsIgnoreCase(course.getRoom()))) {
                         room = "</font><font color=\"#FF0000\" face=\"Arial\" size=\"1\">" + room;
                     }
+                    String replacePrefix = course.getDay().name().substring(0, 2) + (course.getLesson() + i);
                     //Die Platzhalter sind "MO1R" für Montag 1 Stunde Raum aufgebaut. da wird das einfach ersetzt.
-                    html = html.replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "R", room)
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "C", name)
-                            .replace(course.getDay().name().substring(0, 2) + (course.getLesson() + i) + "L", teacher);
+                    html = html.replace(replacePrefix + "R", room)
+                            .replace(replacePrefix + "C", name)
+                            .replace(replacePrefix + "L", teacher)
+                            .replace(replacePrefix + "D", course.getLengthInMin() == 0 ? "" : course.getLengthInMin() + " min");
                 }
             }
         }
