@@ -46,8 +46,8 @@ public class Plan implements Serializable {
      * @throws DSBNotLoadableException Wenn keine Verbindung zum DSB hergestellt werden kann
      */
     public boolean refresh() throws DSBNotLoadableException {
-        String jsonData = getJSONString();
-        if (jsonData.isEmpty()) return false;
+        JSONArray jsonData = getJSONData();
+        if (jsonData.isEmpty()) throw new DSBNotLoadableException("Can't get JSON string for week: " + week);
         setToken(loadToken(jsonData));
         Date update;
         try {
@@ -341,11 +341,11 @@ public class Plan implements Serializable {
     }
 
     /**
-     * Den JSON-String holen mit allen möglichen Infos über den Plan z.B. token, lastupdate
-     * @return Den JSON-String
+     * Den JSON-Array holen mit allen möglichen Infos über den Plan z.B. token, lastupdate
+     * @return Das JSON-Array
      * @throws DSBNotLoadableException Falls der String nicht geladen werden kann
      */
-    public String getJSONString() throws DSBNotLoadableException {
+    public JSONArray getJSONData() throws DSBNotLoadableException {
         try {
             URL connectwat = new URL("https://mobileapi.dsbcontrol.de/dsbtimetables?authid=a7f2b46b-4d23-446e-8382-404d55c31f90");
             HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
@@ -353,21 +353,40 @@ public class Plan implements Serializable {
             urlConnection.connect();
 
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            return bufferedReader.lines().collect(Collectors.joining());
+            return new JSONArray(bufferedReader.lines().collect(Collectors.joining()));
         }catch (IOException e) {
             throw new DSBNotLoadableException(e);
         }
     }
 
     /**
-     * Aus dem JSON String lesen, wann das letzte Update war
-     * @param s Der JSON-String
+     * Den DataJS-String als JSONObject holen mit allen möglichen Infos z.B. welche Wochen im Moment verfügbar sind
+     * @return Das JSONObject
+     * @throws DSBNotLoadableException Falls der String nicht geladen werden kann
+     */
+    public JSONObject getDataJSAsJSONObject() throws DSBNotLoadableException {
+        try {
+            URL connectwat = new URL("https://dsbmobile.de/data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/data.js");
+            HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
+
+            urlConnection.connect();
+
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+            String semiJson = bufferedReader.lines().collect(Collectors.joining()).replace("var data = ", "");
+            return new JSONObject(semiJson);
+        }catch (IOException e) {
+            throw new DSBNotLoadableException(e);
+        }
+    }
+
+    /**
+     * Aus dem JSON-Array lesen, wann das letzte Update war
+     * @param array Das JSON-Array
      * @return Das Datum als java.util.Date
      * @throws ParseException Wenn der Datums-String nicht geparst werden kann
      */
     //
-    public Date getUpdateDate(String s) throws ParseException {
-        JSONArray array = new JSONArray(s);
+    public Date getUpdateDate(JSONArray array) throws ParseException {
         JSONObject object = (JSONObject) array.get(0);
         String date = (String) object.get("Date");
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy kk:mm");
@@ -375,12 +394,11 @@ public class Plan implements Serializable {
     }
 
     /**
-     * Aus dem JSON String den aktuellen Token lesen
-     * @param s Der JSON-String
+     * Aus dem JSON-Array den aktuellen Token lesen
+     * @param array Das JSON-Array
      * @return Den Token als String
      */
-    public String loadToken(String s) throws DSBNotLoadableException {
-        JSONArray array = new JSONArray(s);
+    public String loadToken(JSONArray array) throws DSBNotLoadableException {
         // We need this for loop because android replaces the json api with a already provided one where JSONArray doesn't implement Iterable
         // https://stackoverflow.com/questions/57274183/android-issue-using-json-library-in-pure-java-package
         for (int i = 0; i < array.length(); i++) {
@@ -392,7 +410,7 @@ public class Plan implements Serializable {
                 }
             }
         }
-        throw new DSBNotLoadableException("Can't load token for week: " + getWeek() +" from string: " + s);
+        throw new DSBNotLoadableException("Can't load token for week: " + getWeek() +" from string: " + array);
     }
 
     /**
