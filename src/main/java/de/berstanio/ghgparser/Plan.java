@@ -49,6 +49,7 @@ public class Plan implements Serializable {
         JSONArray jsonData = getJSONData();
         if (jsonData.isEmpty()) throw new DSBNotLoadableException("Can't get JSON string for week: " + week);
         setToken(loadToken(jsonData));
+        if (!isWeekAvailable()) throw new WeekNotAvailableException("The following week is not available for download: " + week);
         Date update;
         try {
             update = getUpdateDate(jsonData);
@@ -373,9 +374,20 @@ public class Plan implements Serializable {
 
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
             String semiJson = bufferedReader.lines().collect(Collectors.joining()).replace("var data = ", "");
+            System.out.println(connectwat.toString());
             return new JSONObject(semiJson);
         }catch (IOException e) {
             throw new DSBNotLoadableException(e);
+        }
+    }
+
+    public boolean isWeekAvailable() {
+        try {
+            JSONObject jsonObject = getDataJSAsJSONObject().getJSONObject("weeks");
+            return jsonObject.has(getWeek() + "");
+        } catch (DSBNotLoadableException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
