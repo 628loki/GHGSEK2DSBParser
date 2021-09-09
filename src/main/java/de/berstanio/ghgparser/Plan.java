@@ -319,8 +319,18 @@ public class Plan implements Serializable {
      */
     //Runterladen des HTMLs vom Server
     public String download() throws DSBNotLoadableException {
-        // TODO: 09.08.2021 Find better solution (https://github.com/Berstanio/GHGSEK2DSBParser/issues/3)
-        String room = getYear() == 12 ? "c00024" : "c00023";
+        String room = null;
+        JSONArray jsonArray = getDataJSAsJSONObject().getJSONArray("classes");
+        for (int i = 0; i < jsonArray.length(); i++) {
+            String s = jsonArray.getString(i);
+            // TODO: 09.09.2021 Fehleranfällig?
+            if (s.startsWith(getYear() + "")) {
+                room = "c000" + (i + 1);
+            }
+        }
+        if (room == null){
+            throw new DSBNotLoadableException("Can't load year " + getYear() + " from datajs");
+        }
         String week = getWeek() + "";
         if (week.length() == 1){
             week = "0" + week;
