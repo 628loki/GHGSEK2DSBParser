@@ -152,6 +152,7 @@ public class Plan implements Serializable {
                         DayOfWeek day = DayOfWeek.of(Math.floorDiv(colPos, 12) + 1);
 
                         if (element.getElementsByTag("tr").size() < 1) {
+                            // TODO: 24.05.2021 Kann zu Fehlern führen
                             dayListMap.get(day).add(Block.EMPTY);
                         } else {
                             Elements courses = element.getElementsByTag("tr");
@@ -172,7 +173,10 @@ public class Plan implements Serializable {
                                     block.getCourses().add(Block.EMPTY.getCourses().get(0));
                                     continue;
                                 } else if (part.size() == 1) {
-                                    if (part.get(0).text().chars().allMatch(Character::isDigit)) continue;
+                                    if (part.get(0).text().chars().allMatch(Character::isDigit) && !part.get(0).text().isEmpty()) {
+                                        block.getCourses().forEach(course1 -> course1.setLengthInMin(Integer.parseInt(part.get(0).text())));
+                                        continue;
+                                    }
                                     course.setCourseName(part.get(0).text());
                                     course.setTeacher("");
                                     course.setRoom("");
@@ -192,6 +196,11 @@ public class Plan implements Serializable {
                                     course.setCancelled(true);
                                 }
                                 block.getCourses().add(course);
+                                if (part.size() == 4) {
+                                    if (part.get(3).text().chars().allMatch(Character::isDigit) && !part.get(3).text().isEmpty()) {
+                                        block.getCourses().forEach(course1 -> course1.setLengthInMin(Integer.parseInt(part.get(3).text())));
+                                    }
+                                }
                             }
 
                             if (dayListMap.get(day).size() != z) {

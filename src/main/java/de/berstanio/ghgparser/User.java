@@ -23,7 +23,7 @@ public class User implements Serializable{
     }
 
     /**
-     * Maskiert alle Kurse aus einem Plan weg, die der User nicht belegt hat.
+     * Maskiert alle Kurse aus einem Plan weg, die der User nicht belegt hat. Außerdem trägt er die Stundenlänge ein.
      * @param dayListMap Die Map, aus der die nicht belegten Elemente wegmaskiert werden sollen
      * @return Die Map, nach der maskierung
      */
@@ -95,6 +95,7 @@ public class User implements Serializable{
 
                 if (optionalCourse.isPresent()){
                     newMap.get(course.getDay()).set(course.getLesson() - 1, optionalCourse.get());
+                    optionalCourse.get().setLengthInMin(course.getLengthInMin());
                 }else {
                     newMap.get(course.getDay()).set(course.getLesson() - 1, block.getCourses().get(0));
                 }

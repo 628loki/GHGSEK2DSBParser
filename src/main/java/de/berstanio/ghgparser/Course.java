@@ -12,6 +12,7 @@ public class Course implements Serializable {
     private String teacher;
     private String room;
     private int length;
+    private int lengthInMin;
     private DayOfWeek day;
     private int lesson;
     private boolean cancelled;
@@ -25,6 +26,7 @@ public class Course implements Serializable {
                 ", day=" + day +
                 ", lesson=" + lesson +
                 ", cancelled=" + cancelled +
+                ", lengthInMin=" + lengthInMin +
                 '}';
     }
 
@@ -138,5 +140,21 @@ public class Course implements Serializable {
      */
     public void setLesson(int lesson) {
         this.lesson = lesson;
+    }
+
+    /**
+     * Gibt die Länge der Stunde in Minuten zurück
+     * @return die Länge als int
+     */
+    public int getLengthInMin () {
+        return lengthInMin;
+    }
+
+    /**
+     * Setzt die Länge der Stunde in Minuten
+     * @param lengthInMin die Länge als int
+     */
+    public void setLengthInMin (int lengthInMin) {
+        this.lengthInMin = lengthInMin;
     }
 }
