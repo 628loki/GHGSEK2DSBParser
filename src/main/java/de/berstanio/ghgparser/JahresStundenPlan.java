@@ -3,11 +3,6 @@ package de.berstanio.ghgparser;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.net.ssl.HttpsURLConnection;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -166,13 +161,12 @@ public class JahresStundenPlan extends Plan {
     }
 
     /**
-     * Extrahiert aus einem JSON-String das Datum des letzten Plan-Updates
-     * @param s Der JSON-String
+     * Extrahiert aus einem JSON-Array das Datum des letzten Plan-Updates
+     * @param array Das JSON-Array
      * @return Das Datum des letzten Plan-Updates als java.util.Date
      */
     @Override
-    public Date getUpdateDate(String s) throws ParseException {
-        JSONArray array = new JSONArray(s);
+    public Date getUpdateDate(JSONArray array) throws ParseException {
         JSONObject object = (JSONObject) array.get(1);
         String date = (String) object.get("Date");
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy kk:mm");
@@ -180,13 +174,12 @@ public class JahresStundenPlan extends Plan {
     }
 
     /**
-     * Extrahiert aus einem JSON-String den Token des Plans
-     * @param s Der JSON-String
+     * Extrahiert aus einem JSON-Array den Token des Plans
+     * @param array Das JSON-Array
      * @return Der Token als String
      */
     @Override
-    public String loadToken(String s) throws DSBNotLoadableException {
-        JSONArray array = new JSONArray(s);
+    public String loadToken(JSONArray array) throws DSBNotLoadableException {
         // We need this for loop because android replaces the json api with a already provided one where JSONArray doesn't implement Iterable
         // https://stackoverflow.com/questions/57274183/android-issue-using-json-library-in-pure-java-package
         for (int i = 0; i < array.length(); i++) {
@@ -198,7 +191,7 @@ public class JahresStundenPlan extends Plan {
                 }
             }
         }
-        throw new DSBNotLoadableException("Can't load token for JSP from string: " + s);
+        throw new DSBNotLoadableException("Can't load token for JSP from string: " + array);
     }
 
     /**
@@ -208,18 +201,11 @@ public class JahresStundenPlan extends Plan {
     @Override
     public int getWeek(){
         try {
-            URL connectwat = new URL("https://dsbmobile.de/data/a7f2b46b-4d23-446e-8382-404d55c31f90/" + getToken() + "/data.js");
-            HttpsURLConnection urlConnection = (HttpsURLConnection) connectwat.openConnection();
-
-            urlConnection.connect();
-
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-            String s =  bufferedReader.lines().collect(Collectors.joining());
-
-            int i = s.indexOf("weeks: ") + 13;
-            s = s.substring(i, i + 2);
-            return Integer.parseInt(s);
-        }catch (IOException e){
+            JSONObject s = getDataJSAsJSONObject();
+            JSONObject weeks = s.getJSONObject("weeks");
+            int week = Integer.parseInt(weeks.keys().next());
+            return week;
+        }catch (DSBNotLoadableException e){
             e.printStackTrace();
             return 0;
         }
