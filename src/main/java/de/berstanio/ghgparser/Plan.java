@@ -47,7 +47,7 @@ public class Plan implements Serializable {
      */
     public boolean refresh() throws DSBNotLoadableException {
         JSONArray jsonData = getJSONData();
-        if (jsonData.isEmpty()) throw new DSBNotLoadableException("Can't get JSON string for week: " + week);
+        if (jsonData.length() == 0) throw new DSBNotLoadableException("Can't get JSON string for week: " + week);
         setToken(loadToken(jsonData));
         if (!isWeekAvailable()) throw new WeekNotAvailableException("The following week is not available for download: " + week);
         Date update;
