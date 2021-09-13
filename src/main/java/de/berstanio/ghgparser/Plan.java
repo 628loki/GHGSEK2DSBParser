@@ -393,7 +393,6 @@ public class Plan implements Serializable {
 
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
             String semiJson = bufferedReader.lines().collect(Collectors.joining()).replace("var data = ", "");
-            System.out.println(connectwat.toString());
             return new JSONObject(semiJson);
         }catch (IOException e) {
             throw new DSBNotLoadableException(e);
