@@ -482,6 +482,7 @@ public class Plan implements Serializable {
      */
     public void setDayListMap(HashMap<DayOfWeek, LinkedList<Block>> dayListMap) {
         this.dayListMap = dayListMap;
+        normalize();
     }
 
     /**

@@ -63,8 +63,6 @@ public class JahresStundenPlan extends Plan {
                 });
             });
         });
-        //Ins Standard-Format bringen
-        normalize();
 
         //Kurse, die ich schon hinzugefügt habe(z.B. Kurse die über 2 Stunden gehen, sind 2x drin)
         ArrayList<Course> alreadyAdd = new ArrayList<>();
