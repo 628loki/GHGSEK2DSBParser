@@ -181,7 +181,6 @@ public class FreeRoomDSB {
         Document document = Jsoup.parse(s);
 
         String room = document.getElementsByAttributeValue("color","#0000FF").get(0).text();
-        System.out.println(room);
 
         Elements tables = document.getElementsByAttributeValue("rules", "all");
         Element table = tables.get(0);

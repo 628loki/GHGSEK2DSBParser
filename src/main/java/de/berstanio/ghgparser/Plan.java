@@ -124,7 +124,7 @@ public class Plan implements Serializable {
             int colPos = 1;
 
             Iterator<Element> iterator = days.iterator();
-            System.out.println("Zeile " + z);
+            //System.out.println("Zeile " + z);
             while (colPos < 60) {
                 if (uebertragMap.get(colPos) != null) {
                     Transfer transfer = uebertragMap.get(colPos);
@@ -145,7 +145,7 @@ public class Plan implements Serializable {
                         uebertragMap.remove(colPos);
                     }
                     colPos += transfer.colspan;
-                    System.out.println("(Übertrag) Aktuelle colPos: " + colPos);
+                    //System.out.println("(Übertrag) Aktuelle colPos: " + colPos);
                 } else {
                     if (iterator.hasNext()) {
                         Element element = iterator.next();
@@ -209,7 +209,7 @@ public class Plan implements Serializable {
                                 dayListMap.get(day).add(block);
                             }
                             if (count > 1) {
-                                System.out.println("Übertrag dazu: " + count);
+                                //System.out.println("Übertrag dazu: " + count);
                                 Transfer transfer = new Transfer();
                                 transfer.colspan = Integer.parseInt(element.attr("colspan"));
                                 transfer.counter = count;
@@ -217,10 +217,10 @@ public class Plan implements Serializable {
                                 uebertragMap.put(colPos, transfer);
                             }
                             colPos += Integer.parseInt(element.attr("colspan"));
-                            System.out.println("(Elem) Aktuelle colPos: " + colPos);
+                            //System.out.println("(Elem) Aktuelle colPos: " + colPos);
                         }
                     } else {
-                        System.out.println("Fehler!");
+                        System.err.println("Fehler!");
                         break;
                     }
                 }
