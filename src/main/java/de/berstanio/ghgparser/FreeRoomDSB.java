@@ -157,7 +157,7 @@ public class FreeRoomDSB {
         return generateHTML(getDayListMap(token));
     }
 
-    private static HashMap<DayOfWeek, LinkedList<ArrayList<String>>> getDayListMap(String token) throws DSBNotLoadableException {
+    public static HashMap<DayOfWeek, LinkedList<ArrayList<String>>> getDayListMap(String token) throws DSBNotLoadableException {
         HashMap<DayOfWeek, LinkedList<ArrayList<String>>> allMap = new HashMap<>();
         for (int i = 27; i <= 46; i++) {
             getFreeLessons(download("000" + i, token)).forEach((dayOfWeek, strings) -> allMap.computeIfAbsent(dayOfWeek, tmp -> new LinkedList<>()).add(strings));
