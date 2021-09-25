@@ -6,7 +6,7 @@
 
     <groupId>io.github.berstanio</groupId>
     <artifactId>ghgsek2dsbparser</artifactId>
-    <version>1.2.7</version>
+    <version>1.2.8</version>
     <name>GHGSek2DDBParser</name>
     <description>Fetching and parsing DSB plan for GHG</description>
     <url>https://github.com/Berstanio/GHGSEK2DSBParser</url>

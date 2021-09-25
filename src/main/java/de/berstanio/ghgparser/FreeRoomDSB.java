@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,31 +57,29 @@ public class FreeRoomDSB {
      * @param dayMap Die Liste der freien Räume
      * @return Das fertige FreeRoom-HTML
      */
-    public static String generateHTML(HashMap<DayOfWeek, ArrayList<String>> dayMap){
+    public static String generateHTML(HashMap<DayOfWeek, LinkedList<ArrayList<String>>> dayMap){
         String s = html;
-        for (Map.Entry<DayOfWeek, ArrayList<String>> entry : dayMap.entrySet()) {
+        for (Map.Entry<DayOfWeek, LinkedList<ArrayList<String>>> entry : dayMap.entrySet()) {
             DayOfWeek dayOfWeek = entry.getKey();
-            ArrayList<String> strings = entry.getValue();
+            LinkedList<ArrayList<String>> strings = entry.getValue();
             for (int i = 0; i < 5; i++) {
-                StringBuilder stringBuilder = new StringBuilder(strings.get(i));
                 String identifier = dayOfWeek.name().substring(0, 2) + (i + 1);
-                for (int j = 3; j <= stringBuilder.length(); j += 4) {
-                    if (j% 3 == 0){
-                        if (j == stringBuilder.length()){
-                            s = s.replace(identifier + "C", stringBuilder.substring(j-3,j) + "<br>" + identifier + "C");
-                        }else {
-                            s = s.replace(identifier + "R", stringBuilder.substring(j-3,j) + "<br>" + identifier + "R");
-                        }
-                    }else if(j % 3 == 1){
-                        s = s.replace(identifier + "C", stringBuilder.substring(j-3,j) + "<br>" + identifier + "C");
-                    }else {
-                        s = s.replace(identifier + "L", stringBuilder.substring(j-3,j) + "<br>" + identifier + "L");
+                int j = 0;
+                for (ArrayList<String> string : strings) {
+                    String room = string.get(i);
+                    if (room.isEmpty()) continue;
+                    if (j % 3 == 0) {
+                        s = s.replace(identifier + "C", room + "<br>" + identifier + "C");
+                    } else if (j % 3 == 1) {
+                        s = s.replace(identifier + "R", room + "<br>" + identifier + "R");
+                    } else {
+                        s = s.replace(identifier + "L", room + "<br>" + identifier + "L");
                     }
+                    j++;
                 }
                 s = s.replace("<br>" + identifier + "R", "")
                         .replace("<br>" + identifier + "C", "")
-                        .replace("<br>" + identifier + "L", "")
-                        .replace(identifier + "D", "");
+                        .replace("<br>" + identifier + "L", "");
             }
         }
         for (int i = 0; i < 5; i++) {
@@ -155,27 +154,15 @@ public class FreeRoomDSB {
      */
     public static String refresh() throws DSBNotLoadableException {
         String token = getToken();
-        HashMap<DayOfWeek, ArrayList<String>> allMap = getFreeLessons(download("00027", token));
-        for (int i = 28; i <= 46; i++) {
-            String dl = download("000" + i, token);
-            HashMap<DayOfWeek, ArrayList<String>> map = getFreeLessons(dl);
-            for (Map.Entry<DayOfWeek, ArrayList<String>> entry : map.entrySet()) {
-                DayOfWeek dayOfWeek = entry.getKey();
-                ArrayList<String> strings = entry.getValue();
-                ArrayList<String> allStrings = allMap.get(dayOfWeek);
-                for (int j = 0; j < strings.size(); j++) {
-                    String s = strings.get(j);
-                    if (!s.isEmpty()) {
-                        if (!allStrings.get(j).isEmpty()) {
-                            allStrings.set(j, allStrings.get(j) + ";" + s);
-                        } else {
-                            allStrings.set(j, s);
-                        }
-                    }
-                }
-            }
+        return generateHTML(getDayListMap(token));
+    }
+
+    private static HashMap<DayOfWeek, LinkedList<ArrayList<String>>> getDayListMap(String token) throws DSBNotLoadableException {
+        HashMap<DayOfWeek, LinkedList<ArrayList<String>>> allMap = new HashMap<>();
+        for (int i = 27; i <= 46; i++) {
+            getFreeLessons(download("000" + i, token)).forEach((dayOfWeek, strings) -> allMap.computeIfAbsent(dayOfWeek, tmp -> new LinkedList<>()).add(strings));
         }
-        return generateHTML(allMap);
+        return allMap;
     }
 
     /**
@@ -194,6 +181,7 @@ public class FreeRoomDSB {
         Document document = Jsoup.parse(s);
 
         String room = document.getElementsByAttributeValue("color","#0000FF").get(0).text();
+        System.out.println(room);
 
         Elements tables = document.getElementsByAttributeValue("rules", "all");
         Element table = tables.get(0);
@@ -212,8 +200,8 @@ public class FreeRoomDSB {
                 dayEnum = DayOfWeek.of(dayi+1);
                 String write;
                 if (!day.attr("colspan").equals("12")){
-                    write = "";
                     j += 12 / Integer.parseInt(day.attr("colspan")) - 1;
+                    write = "";
                 }else if (day.getElementsByTag("tr").size() <= 1){
                     write = room;
                 }else if (day.getElementsByTag("strike").size() != 0){
