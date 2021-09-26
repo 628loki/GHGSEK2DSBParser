@@ -5,3 +5,7 @@ logs
 user
 out.htm
 FreeRoom.html
+bin/
+.classpath
+.settings
+.project

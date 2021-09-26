@@ -7,7 +7,13 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Locale;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 /**
@@ -100,7 +106,8 @@ public class GHGParser {
     public static String generateHtmlFile(User user, Plan plan) {
         String html = getRawHtml();
         html = html.replace("JGPH", user.getYear() + "");
-        html = html.replace("lastUpdatePH", plan.getLastUpdate().toString() + "");
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM kk:mm");
+        html = html.replace("lastUpdatePH", simpleDateFormat.format(plan.getLastUpdate()));
         //Maskiert alle Kurse weg, die nicht vom Nutzer belegt wurden
         HashMap<DayOfWeek, LinkedList<Course>> masked = user.maskPlan(plan.getDayListMap());
         //Ein HTML-String, damit ich leichter etwas durchstreichen kann. "con" ist der Platzhalter von dem, was durchgetrichen werden soll
@@ -180,7 +187,7 @@ public class GHGParser {
         }
         init(new File("user/"));
         setBasedir(new File("user/"));
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance(Locale.GERMAN);
         int week = calendar.get(Calendar.WEEK_OF_YEAR);
         ArrayList<User> users = User.loadUsers();
         //jahresStundenPlan2.getCoreCourses().forEach(coreCourse -> System.out.println(coreCourse.getCourseName() + "  " + coreCourse.getTeacher()));
